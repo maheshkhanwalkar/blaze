@@ -1,0 +1,2 @@
+# blaze
+Version Control System
