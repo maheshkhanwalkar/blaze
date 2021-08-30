@@ -13,10 +13,9 @@ type TrackedObject struct {
 	data []byte
 }
 
-// GenerateName creates an object name using the provided path name
-// as input to the underlying generation logic
-func GenerateName(path string) string {
-	hash := sha256.Sum256([]byte(path))
+// GenerateName creates an object name from the file data
+func GenerateName(data []byte) string {
+	hash := sha256.Sum256(data)
 	return fmt.Sprintf("%x", hash)
 }
 
