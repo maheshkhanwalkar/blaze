@@ -1,7 +1,9 @@
 package main
 
-import "blaze"
+import (
+	"blaze/initialize"
+)
 
 func main() {
-	blaze.Init()
+	initialize.Init()
 }

@@ -1,4 +1,4 @@
-package blaze
+package initialize
 
 import (
 	"fmt"
