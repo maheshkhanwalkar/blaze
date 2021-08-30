@@ -13,8 +13,8 @@ type TrackedObject struct {
 	data []byte
 }
 
-// GenerateName creates an object name from the file data
-func GenerateName(data []byte) string {
+// generateName creates an object name from the file data
+func generateName(data []byte) string {
 	hash := sha256.Sum256(data)
 	return fmt.Sprintf("%x", hash)
 }
@@ -26,22 +26,14 @@ func check(err error) {
 	}
 }
 
-// ToDisk serializes the provided object to disk
-func ToDisk(obj *TrackedObject) {
-	path := fmt.Sprintf(".blaze/object/%s", obj.name)
-	f, err := os.Create(path)
-	check(err)
-
-	// Only need to write the data to disk, since the object name is encoded
-	// within the file name
-	_, err = f.Write(obj.data)
-	check(err)
-	err = f.Close()
-	check(err)
+// CreateObject creates a new tracked object from the given data
+func CreateObject(data []byte) *TrackedObject {
+	name := generateName(data)
+	return &TrackedObject{name: name, data: data}
 }
 
-// FromDisk deserializes the object from disk
-func FromDisk(name string) *TrackedObject {
+// LoadObject loads the tracked object from disk
+func LoadObject(name string) *TrackedObject {
 	path := fmt.Sprintf(".blaze/object/%s", name)
 	f, err:= os.Open(path)
 	check(err)
@@ -53,6 +45,19 @@ func FromDisk(name string) *TrackedObject {
 	_, err = f.Read(buffer)
 	check(err)
 
-	obj := TrackedObject{name: name, data: buffer}
-	return &obj
+	return &TrackedObject{name: name, data: buffer}
+}
+
+// ToDisk serializes the object to disk
+func (obj *TrackedObject) ToDisk() {
+	path := fmt.Sprintf(".blaze/object/%s", obj.name)
+	f, err := os.Create(path)
+	check(err)
+
+	// Only need to write the data to disk, since the object name is encoded
+	// within the file name
+	_, err = f.Write(obj.data)
+	check(err)
+	err = f.Close()
+	check(err)
 }
