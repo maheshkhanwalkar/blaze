@@ -7,15 +7,6 @@ const (
 	Directory
 )
 
-// SuperBlock is the top-level filesystem structure, which contains inode metadata
-// related to allocation and freeing of inodes.
-type SuperBlock struct {
-	version    int       // super-block version
-	vCounter   int       // new inode counter
-	freeInodes []int     // list of free inodes
-	root       *DirInode // (in-memory) root inode
-}
-
 // Inode contains common inode data.
 type Inode struct {
 	ino      int64 // inode number

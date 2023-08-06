@@ -59,10 +59,3 @@ func computeHash(data []byte) string {
 func generateName(data []byte) string {
 	return computeHash(data)
 }
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("Error while processing object: %s", err)
-		os.Exit(1)
-	}
-}
