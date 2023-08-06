@@ -7,19 +7,34 @@ const (
 	Directory
 )
 
+// SuperBlock is the top-level filesystem structure, which contains inode metadata
+// related to allocation and freeing of inodes.
+type SuperBlock struct {
+	version    int       // super-block version
+	vCounter   int       // new inode counter
+	freeInodes []int     // list of free inodes
+	root       *DirInode // (in-memory) root inode
+}
+
+// Inode contains common inode data.
+type Inode struct {
+	ino      int64 // inode number
+	vCounter int   // version counter
+}
+
 // FileInode is a structure of a versioned inode that represents a file.
 // Since this inode supports versioning, it maintains a mapping of a version to
 // the underlying blob in the version-control filesystem.
 type FileInode struct {
-	ino        int64             // inode number
-	versionMap map[string]string // mapping of version number to blob
+	Inode                     // common inode data
+	versionMap map[int]string // mapping of version number to blob
 }
 
 // DirInode is a structure of a versioned inode that represents a directory.
 // Since this inode supports versioning it maintains a directory entry mapping that
 // is keyed by version (as well as name) to get the corresponding versioned inode.
 type DirInode struct {
-	ino     int64                 // inode number
+	Inode                         // common inode data
 	entries map[EntryKey]DirEntry // directory entries
 }
 
@@ -34,4 +49,16 @@ type DirEntry struct {
 	ino     int64     // corresponding inode number
 	itype   InodeType // corresponding inode type
 	version int       // corresponding inode version
+}
+
+func (ip *FileInode) Update(blob string) int {
+	version := getAndIncrement(&ip.vCounter)
+	ip.versionMap[version] = blob
+	return version
+}
+
+func getAndIncrement(counter *int) int {
+	version := *counter
+	*counter++
+	return version
 }
