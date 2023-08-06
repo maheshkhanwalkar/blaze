@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-const SuperBlockPath = ".blaze/fs/superblock"
+const SuperBlockPath = ".blaze/superblock"
 
 // SuperBlock is the top-level filesystem structure, which contains inode metadata
 // related to allocation and freeing of inodes.
@@ -27,7 +27,7 @@ func (sb *SuperBlock) ToDisk() {
 }
 
 func NewSuperBlock() *SuperBlock {
-	return &SuperBlock{Version: 1, InodeCounter: 1, root: nil}
+	return &SuperBlock{Version: 1, InodeCounter: 1, FreeInodes: []int{}, root: nil}
 }
 
 func LoadSuperBlock() *SuperBlock {

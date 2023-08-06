@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blaze/core/fs"
 	"fmt"
 	"os"
 )
@@ -27,8 +28,6 @@ func exists(dir string) bool {
 }
 
 func Init() {
-	// FIXME: need to add robust checks -- what if subdirectories are missing or
-	//  there's some sort of corruption?
 	if exists(".blaze") {
 		fmt.Println("Repository already initialized, skipping...")
 		return
@@ -37,10 +36,14 @@ func Init() {
 	createDir(".blaze")
 
 	// Create all required directories under .blaze/
-	sub := []string{"staging", "scratch", "index", "slice", "object"}
+	sub := []string{"blob", "inode"}
 	for _, dir := range sub {
 		createDir(fmt.Sprintf(".blaze/%s", dir))
 	}
+
+	// Create superblock
+	sb := fs.NewSuperBlock()
+	sb.ToDisk()
 }
 
 func main() {

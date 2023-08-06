@@ -22,7 +22,7 @@ func CreateBlob(data []byte) *Blob {
 
 // LoadBlob loads the blob from disk
 func LoadBlob(name string) *Blob {
-	path := fmt.Sprintf(".blaze/object/%s", name)
+	path := fmt.Sprintf(".blaze/blob/%s", name)
 	buffer := file.LoadBinaryFile(path)
 
 	hash := computeHash(buffer)
@@ -37,7 +37,7 @@ func LoadBlob(name string) *Blob {
 
 // ToDisk serializes the blob to disk
 func (blob *Blob) ToDisk() {
-	path := fmt.Sprintf(".blaze/object/%s", blob.name)
+	path := fmt.Sprintf(".blaze/blob/%s", blob.name)
 	f, err := os.Create(path)
 	check(err)
 
