@@ -1,6 +1,7 @@
 package core
 
 import (
+	"blaze/file"
 	"crypto/sha256"
 	"fmt"
 	"os"
@@ -13,10 +14,15 @@ type TrackedObject struct {
 	data []byte
 }
 
-// generateName creates an object name from the file data
-func generateName(data []byte) string {
+// computeHash computes a cryptographic hash of the given data
+func computeHash(data []byte) string {
 	hash := sha256.Sum256(data)
 	return fmt.Sprintf("%x", hash)
+}
+
+// generateName creates an object name from the file data
+func generateName(data []byte) string {
+	return computeHash(data)
 }
 
 func check(err error) {
@@ -35,15 +41,14 @@ func CreateObject(data []byte) *TrackedObject {
 // LoadObject loads the tracked object from disk
 func LoadObject(name string) *TrackedObject {
 	path := fmt.Sprintf(".blaze/object/%s", name)
-	f, err:= os.Open(path)
-	check(err)
+	buffer := file.LoadBinaryFile(path)
 
-	info, err := f.Stat()
-	check(err)
+	hash := computeHash(buffer)
 
-	buffer := make([]byte, info.Size())
-	_, err = f.Read(buffer)
-	check(err)
+	if hash != name {
+		fmt.Printf("object tampering detected: %s has been altered", name)
+		os.Exit(1)
+	}
 
 	return &TrackedObject{name: name, data: buffer}
 }
