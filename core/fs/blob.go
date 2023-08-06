@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"blaze/common"
 	"blaze/file"
 	"crypto/sha256"
 	"fmt"
@@ -39,14 +40,14 @@ func LoadBlob(name string) *Blob {
 func (blob *Blob) ToDisk() {
 	path := fmt.Sprintf(".blaze/blob/%s", blob.name)
 	f, err := os.Create(path)
-	check(err)
+	common.Check(err)
 
 	// Only need to write the data to disk, since the object name is encoded
 	// within the file name
 	_, err = f.Write(blob.data)
-	check(err)
+	common.Check(err)
 	err = f.Close()
-	check(err)
+	common.Check(err)
 }
 
 // computeHash computes a cryptographic hash of the given data
