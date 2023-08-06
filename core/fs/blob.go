@@ -1,4 +1,4 @@
-package core
+package fs
 
 import (
 	"blaze/file"
@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-// Blob represents (as the name implies) a tracked object within the  version control system.
+// Blob represents a tracked object within the version control system.
 // The object is a snapshot in time of some file within the repository
 type Blob struct {
 	name string
