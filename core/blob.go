@@ -7,21 +7,21 @@ import (
 	"os"
 )
 
-// TrackedObject represents (as the name implies) a tracked object within the
-// version control system. The object is a snapshot in time of some file within the repository
-type TrackedObject struct {
+// Blob represents (as the name implies) a tracked object within the  version control system.
+// The object is a snapshot in time of some file within the repository
+type Blob struct {
 	name string
 	data []byte
 }
 
-// CreateObject creates a new tracked object from the given data
-func CreateObject(data []byte) *TrackedObject {
+// CreateBlob creates a new blob from the given data
+func CreateBlob(data []byte) *Blob {
 	name := generateName(data)
-	return &TrackedObject{name: name, data: data}
+	return &Blob{name: name, data: data}
 }
 
-// LoadObject loads the tracked object from disk
-func LoadObject(name string) *TrackedObject {
+// LoadBlob loads the blob from disk
+func LoadBlob(name string) *Blob {
 	path := fmt.Sprintf(".blaze/object/%s", name)
 	buffer := file.LoadBinaryFile(path)
 
@@ -32,18 +32,18 @@ func LoadObject(name string) *TrackedObject {
 		os.Exit(1)
 	}
 
-	return &TrackedObject{name: name, data: buffer}
+	return &Blob{name: name, data: buffer}
 }
 
-// ToDisk serializes the object to disk
-func (obj *TrackedObject) ToDisk() {
-	path := fmt.Sprintf(".blaze/object/%s", obj.name)
+// ToDisk serializes the blob to disk
+func (blob *Blob) ToDisk() {
+	path := fmt.Sprintf(".blaze/object/%s", blob.name)
 	f, err := os.Create(path)
 	check(err)
 
 	// Only need to write the data to disk, since the object name is encoded
 	// within the file name
-	_, err = f.Write(obj.data)
+	_, err = f.Write(blob.data)
 	check(err)
 	err = f.Close()
 	check(err)
