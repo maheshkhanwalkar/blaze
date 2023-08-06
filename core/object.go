@@ -14,24 +14,6 @@ type TrackedObject struct {
 	data []byte
 }
 
-// computeHash computes a cryptographic hash of the given data
-func computeHash(data []byte) string {
-	hash := sha256.Sum256(data)
-	return fmt.Sprintf("%x", hash)
-}
-
-// generateName creates an object name from the file data
-func generateName(data []byte) string {
-	return computeHash(data)
-}
-
-func check(err error) {
-	if err != nil {
-		fmt.Printf("Error while processing object: %s", err)
-		os.Exit(1)
-	}
-}
-
 // CreateObject creates a new tracked object from the given data
 func CreateObject(data []byte) *TrackedObject {
 	name := generateName(data)
@@ -65,4 +47,22 @@ func (obj *TrackedObject) ToDisk() {
 	check(err)
 	err = f.Close()
 	check(err)
+}
+
+// computeHash computes a cryptographic hash of the given data
+func computeHash(data []byte) string {
+	hash := sha256.Sum256(data)
+	return fmt.Sprintf("%x", hash)
+}
+
+// generateName creates an object name from the file data
+func generateName(data []byte) string {
+	return computeHash(data)
+}
+
+func check(err error) {
+	if err != nil {
+		fmt.Printf("Error while processing object: %s", err)
+		os.Exit(1)
+	}
 }

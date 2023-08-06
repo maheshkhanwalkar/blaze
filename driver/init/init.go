@@ -1,4 +1,4 @@
-package initialize
+package main
 
 import (
 	"fmt"
@@ -41,4 +41,8 @@ func Init() {
 	for _, dir := range sub {
 		createDir(fmt.Sprintf(".blaze/%s", dir))
 	}
+}
+
+func main() {
+	Init()
 }
