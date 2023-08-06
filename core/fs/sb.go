@@ -24,10 +24,17 @@ func (sb *SuperBlock) ToDisk() {
 	encoder := json.NewEncoder(f)
 	err = encoder.Encode(*sb)
 	check(err)
+
+	sb.root.ToDisk()
 }
 
 func NewSuperBlock() *SuperBlock {
-	return &SuperBlock{Version: 1, InodeCounter: 1, FreeInodes: []int{}, root: nil}
+	root := CreateRootInode()
+	return &SuperBlock{Version: 1, InodeCounter: 2, FreeInodes: []int{}, root: root}
+}
+
+func CreateRootInode() *DirInode {
+	return &DirInode{Inode: Inode{Ino: 1, VersionCounter: 1}, Entries: map[EntryKey]DirEntry{}, dirty: true}
 }
 
 func LoadSuperBlock() *SuperBlock {
@@ -41,5 +48,6 @@ func LoadSuperBlock() *SuperBlock {
 	err = decoder.Decode(&sb)
 	check(err)
 
+	// TODO load root inode from disk
 	return &sb
 }
