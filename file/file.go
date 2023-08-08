@@ -2,6 +2,7 @@ package file
 
 import (
 	"fmt"
+	"google.golang.org/protobuf/proto"
 	"os"
 )
 
@@ -32,4 +33,11 @@ func LoadBinaryFile(path string) []byte {
 	check(err)
 
 	return buffer
+}
+
+func Serialise(m proto.Message, path string) {
+	output, err := proto.Marshal(m)
+	check(err)
+	err = os.WriteFile(path, output, 0755)
+	check(err)
 }

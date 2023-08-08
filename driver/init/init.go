@@ -42,7 +42,7 @@ func Init() {
 	}
 
 	// Create superblock
-	sb := fs.NewSuperBlock()
+	sb := fs.CreateSuperBlock()
 	sb.ToDisk()
 }
 

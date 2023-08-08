@@ -1,53 +1,15 @@
 package fs
 
 import (
-	"blaze/common"
-	"blaze/file"
+	"blaze/proto/fs"
 	"crypto/sha256"
 	"fmt"
-	"os"
 )
 
-// Blob represents a tracked object within the version control system.
-// The object is a snapshot in time of some file within the repository
-type Blob struct {
-	name string
-	data []byte
-}
-
 // CreateBlob creates a new blob from the given data
-func CreateBlob(data []byte) *Blob {
+func CreateBlob(data []byte) *fs.Blob {
 	name := generateName(data)
-	return &Blob{name: name, data: data}
-}
-
-// LoadBlob loads the blob from disk
-func LoadBlob(name string) *Blob {
-	path := fmt.Sprintf(".blaze/blob/%s", name)
-	buffer := file.LoadBinaryFile(path)
-
-	hash := computeHash(buffer)
-
-	if hash != name {
-		fmt.Printf("object tampering detected: %s has been altered", name)
-		os.Exit(1)
-	}
-
-	return &Blob{name: name, data: buffer}
-}
-
-// ToDisk serializes the blob to disk
-func (blob *Blob) ToDisk() {
-	path := fmt.Sprintf(".blaze/blob/%s", blob.name)
-	f, err := os.Create(path)
-	common.Check(err)
-
-	// Only need to write the data to disk, since the object name is encoded
-	// within the file name
-	_, err = f.Write(blob.data)
-	common.Check(err)
-	err = f.Close()
-	common.Check(err)
+	return &fs.Blob{Name: name, Data: data}
 }
 
 // computeHash computes a cryptographic hash of the given data

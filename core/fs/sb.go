@@ -3,7 +3,8 @@ package fs
 import (
 	"blaze/common"
 	"blaze/core/fs/inode"
-	"encoding/json"
+	"blaze/file"
+	"blaze/proto/fs"
 	"os"
 )
 
@@ -13,27 +14,27 @@ const RootIno = 1
 // SuperBlock is the top-level filesystem structure, which contains inode metadata
 // related to allocation and freeing of inodes.
 type SuperBlock struct {
-	Version      int             `json:"version"`    // super-block version
-	InodeCounter int             `json:"iCounter"`   // new inode counter
-	FreeInodes   []int           `json:"freeInodes"` // list of free inodes
-	root         *inode.DirInode // (in-memory) root inode
+	sb    *fs.SuperBlock
+	root  *inode.DirInode // (in-memory) root inode
+	dirty bool
 }
 
 func (sb *SuperBlock) ToDisk() {
+	if !sb.dirty {
+		return
+	}
+
 	f, err := os.Create(SuperBlockPath)
 	common.Check(err)
 	defer common.CloseFile(f)
 
-	encoder := json.NewEncoder(f)
-	err = encoder.Encode(*sb)
-	common.Check(err)
-
+	file.Serialise(sb.sb, SuperBlockPath)
 	sb.root.ToDisk()
 }
 
-func NewSuperBlock() *SuperBlock {
+func CreateSuperBlock() *SuperBlock {
 	root := CreateRootInode()
-	return &SuperBlock{Version: 1, InodeCounter: 2, FreeInodes: []int{}, root: root}
+	return &SuperBlock{sb: &fs.SuperBlock{Version: 1, InodeCounter: 2, FreeInodes: []int64{}}, root: root, dirty: true}
 }
 
 func CreateRootInode() *inode.DirInode {
@@ -41,16 +42,6 @@ func CreateRootInode() *inode.DirInode {
 }
 
 func LoadSuperBlock() *SuperBlock {
-	f, err := os.Open(SuperBlockPath)
-	common.Check(err)
-	defer common.CloseFile(f)
-
-	var sb SuperBlock
-
-	decoder := json.NewDecoder(f)
-	err = decoder.Decode(&sb)
-	common.Check(err)
-
-	// TODO load root inode from disk
-	return &sb
+	// TODO
+	return nil
 }

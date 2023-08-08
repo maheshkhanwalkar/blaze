@@ -1,0 +1,10 @@
+syntax = "proto3";
+package proto;
+
+option go_package = "proto/fs";
+
+message SuperBlock {
+  int32 version = 1;
+  int64 inodeCounter = 2;
+  repeated int64 freeInodes = 3;
+}
