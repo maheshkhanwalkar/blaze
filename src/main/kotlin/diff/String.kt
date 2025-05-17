@@ -1,14 +1,14 @@
 package com.revtekk.blaze.diff
 
 /**
- * Computes the longest common subsequence between two input strings.
+ * Computes the longest common subsequence between two input lists.
  *
- * @param first the first input string
- * @param second the second input string
- * @return the longest common subsequence shared between the two input strings
+ * @param first the first input list
+ * @param second the second input list
+ * @return the longest common subsequence shared between the two input lists
  */
-fun longestCommonSubsequence(first: String, second: String): String {
-    val T = Array(first.length) { IntArray(second.length) }
+fun <T> longestCommonSubsequence(first: List<T>, second: List<T>): List<T> {
+    val T = Array(first.size) { IntArray(second.size) }
     val back = mutableMapOf<Pair<Int, Int>, Pair<Int, Int>>()
 
     /*
@@ -46,27 +46,27 @@ fun longestCommonSubsequence(first: String, second: String): String {
     }
 
     /*
-     * To construct an LCS string, we need to traverse the back pointer
+     * To construct an LCS, we need to traverse the back pointer
      * graph until we reach a (terminal) sink node.
      *
-     * We only append a character when traversing a diagonal edge, because
+     * We only append an element when traversing a diagonal edge, because
      * the edge (i,j) -> (i-1, j-1) means that first[i] = second[j], so it
      * must be a part of the LCS.
      */
-    var node = first.length - 1 to second.length - 1
-    val result = StringBuilder()
+    var node = first.size - 1 to second.size - 1
+    val result = mutableListOf<T>()
 
     while (!isSink(back, node)) {
         val prev = back[node]!!
 
         if (isEdgeDiagonal(node, prev)) {
-            result.append(first[node.first])
+            result.addFirst(first[node.first])
         }
 
         node = prev
     }
 
-    return result.reverse().toString()
+    return result
 }
 
 /**
