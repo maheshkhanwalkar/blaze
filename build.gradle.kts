@@ -14,7 +14,7 @@ graalvmNative {
     binaries {
         named("main") {
             imageName.set("blaze")
-            mainClass.set("com.revtekk.MainKt")
+            mainClass.set("com.revtekk.blaze.MainKt")
         }
         named("test") {
             buildArgs.add("-O0")
