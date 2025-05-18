@@ -1,13 +1,23 @@
 package com.revtekk.blaze.diff
 
 /**
+ * Represents a subsequence found as the result of a longest common subsequence (LCS) computation.
+ *
+ * @param T The type of elements in the subsequence.
+ * @property lcs The list of elements that are part of the longest common subsequence.
+ * @property firstPos The list of indices in the first list that are part of the subsequence.
+ * @property secondPos The list of indices in the second list that are part of the subsequence.
+ */
+data class Subsequence<T>(val lcs: List<T>, val firstPos: List<Int>, val secondPos: List<Int>)
+
+/**
  * Computes the longest common subsequence between two input lists.
  *
  * @param first the first input list
  * @param second the second input list
  * @return the longest common subsequence shared between the two input lists
  */
-fun <T> longestCommonSubsequence(first: List<T>, second: List<T>): List<T> {
+fun <T> longestCommonSubsequence(first: List<T>, second: List<T>): Subsequence<T> {
     val T = Array(first.size) { IntArray(second.size) }
     val back = mutableMapOf<Pair<Int, Int>, Pair<Int, Int>>()
 
@@ -54,19 +64,24 @@ fun <T> longestCommonSubsequence(first: List<T>, second: List<T>): List<T> {
      * must be a part of the LCS.
      */
     var node = first.size - 1 to second.size - 1
-    val result = mutableListOf<T>()
+
+    val lcs = mutableListOf<T>()
+    val firstPos = mutableListOf<Int>()
+    val secondPos = mutableListOf<Int>()
 
     while (!isSink(back, node)) {
         val prev = back[node]!!
 
         if (isEdgeDiagonal(node, prev)) {
-            result.addFirst(first[node.first])
+            lcs.addFirst(first[node.first])
+            firstPos.addFirst(node.first)
+            secondPos.addFirst(node.second)
         }
 
         node = prev
     }
 
-    return result
+    return Subsequence(lcs, firstPos, secondPos)
 }
 
 /**
