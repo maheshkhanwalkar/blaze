@@ -1,14 +1,22 @@
 package com.revtekk.blaze
 
-import com.revtekk.blaze.diff.diff
-import java.io.File
+import com.revtekk.blaze.diff.runDiff
+import kotlin.system.exitProcess
 
 /**
  * Blaze entry point.
  */
 fun main(args: Array<String>) {
-    val first = File(args[0])
-    val second = File(args[1])
+    if (args.isEmpty()) {
+        println("Usage: blaze <command> <args>")
+        return
+    }
 
-    diff(first, second)
+    val command = args[0]
+    if (command == "diff") {
+        runDiff(args.drop(1))
+    } else {
+        println("Unknown command: $command")
+        exitProcess(1)
+    }
 }
