@@ -28,8 +28,6 @@ fun diff(first: File, second: File) {
         }
     }
 
-    val revLookup = unique.entries.associate { it.value to it.key }
-
     val firstTransformed = firstLines.map { unique[it]!! }
     val secondTransformed = secondLines.map { unique[it]!! }
 
@@ -37,13 +35,20 @@ fun diff(first: File, second: File) {
 
     var i = 0
     var j = 0
+    var k = 0
 
     // ASCII escape codes for diff color
     val redColor = "\u001B[31m"
-    val resetColor = "\u001B[0m"
+    val blueColor = "\u001B[34m"
     val greenColor = "\u001B[32m"
+    val resetColor = "\u001B[0m"
 
-    for (k in 0 until result.lcs.size) {
+    // 'first' and 'second' are identical
+    if (result.lcs.size == firstLines.size && result.lcs.size == secondLines.size) {
+        return
+    }
+
+    while (i < firstLines.size || j < secondLines.size) {
         /*
          * The 'first' file is considered the original state, while the 'second'
          * file is the new state.
@@ -56,14 +61,34 @@ fun diff(first: File, second: File) {
          * print as-is, since there's no diff there. Then, we repeat the process
          * until we hit the next break point or reach the end of the file.
          */
-        while (i < result.firstPos[k]) {
-            println("${redColor}- ${firstLines[i++]}${resetColor}")
+        var first = true
+        while (canContinue(k, i, result.firstPos, firstLines.size)) {
+            if (first) {
+                println("$blueColor@ line_no: ${i+1}$resetColor")
+                first = false
+            }
+            println("$redColor- ${firstLines[i]}$resetColor")
+            i++
         }
-        while (j < result.secondPos[k]) {
-            println("${greenColor}+ ${secondLines[j++]}${resetColor}")
+        while (canContinue(k, j, result.secondPos, secondLines.size)) {
+            if (first) {
+                /*
+                 * we use 'i' here because the positions are anchored against the numbering of the
+                 * original file.
+                 */
+                println("$blueColor@ line_no: ${i+1}$resetColor")
+                first = false
+            }
+            println("$greenColor+ ${secondLines[j]}$resetColor")
+            j++
         }
-        println("  ${revLookup[result.lcs[k]]}")
+
         i++
         j++
+        k++
     }
+}
+
+private fun canContinue(k: Int, currPos: Int, positions: List<Int>, linesLen: Int): Boolean {
+    return (k < positions.size && currPos < positions[k]) || (k >= positions.size && currPos < linesLen)
 }
