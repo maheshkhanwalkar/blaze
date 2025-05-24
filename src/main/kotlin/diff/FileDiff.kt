@@ -51,12 +51,6 @@ fun diff(first: File, second: File): FileDiff {
     var i = 0
     var j = 0
 
-    // ASCII escape codes for diff color
-    val redColor = "\u001B[31m"
-    val blueColor = "\u001B[34m"
-    val greenColor = "\u001B[32m"
-    val resetColor = "\u001B[0m"
-
     // 'first' and 'second' are identical -- so there's no diff
     if (result.lcs.size == firstLines.size && result.lcs.size == secondLines.size) {
         val lines = firstLines.mapIndexed { idx, line -> DiffLine(DiffType.EQUAL, idx+1, line) }
@@ -108,7 +102,10 @@ fun diff(first: File, second: File): FileDiff {
             j++
         }
 
-        if (state == ProcessingState.IN_DIFF) {
+        if (state == ProcessingState.NONE) {
+            state = ProcessingState.IN_EQUAL
+        }
+        else if (state == ProcessingState.IN_DIFF) {
             state = collect(lines, state, segments)
         }
 
