@@ -3,7 +3,7 @@ package com.revtekk.blaze.diff
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class StringTest {
+class LCSTest {
     @Test
     fun `test longest common subsequence when strings share partial overlap`() {
         val first = "abcde".toList()
