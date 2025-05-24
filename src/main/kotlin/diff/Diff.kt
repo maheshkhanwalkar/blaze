@@ -11,5 +11,8 @@ fun runDiff(args: List<String>) {
 
     val first = args[0]
     val second = args[1]
-    diff(File(first), File(second))
+    val fileDiff = diff(File(first), File(second))
+
+    // TODO print out the diff
+    println(fileDiff)
 }
