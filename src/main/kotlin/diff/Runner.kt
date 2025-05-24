@@ -3,6 +3,14 @@ package com.revtekk.blaze.diff
 import java.io.File
 import kotlin.system.exitProcess
 
+/**
+ * diff subcommand runner.
+ *
+ * main() in Main.kt calls this function when the cmdline args contain
+ * the 'diff' top-level flag.
+ *
+ * @param args command line arguments for diff
+ */
 fun runDiff(args: List<String>) {
     if (args.size != 2) {
         println("Usage: blaze diff <file-1> <file-2>")
