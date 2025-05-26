@@ -14,6 +14,14 @@ package com.revtekk.blaze.common
 class CommandArgumentValidationException(message: String): Exception(message)
 
 /**
+ * Exception thrown to indicate a failure during the execution of a command.
+ *
+ * @constructor Creates an instance of CommandExecutionException with the specified error message.
+ * @param message The detailed error message describing the reason for the exception.
+ */
+class CommandExecutionException(message: String): Exception(message)
+
+/**
  * Represents a generic command that can be executed.
  * This is an abstract base class meant to be extended for creating specific commands.
  *

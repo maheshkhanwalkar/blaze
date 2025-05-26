@@ -1,7 +1,5 @@
 package com.revtekk.blaze.diff
 
-import java.io.File
-
 enum class DiffType {
     INSERT, DELETE, EQUAL
 }
@@ -21,14 +19,11 @@ private enum class ProcessingState {
 /**
  * Compares the contents of two files line by line
  *
- * @param first the first file to compare
- * @param second the second file to compare
+ * @param firstLines the lines of the first file to compare
+ * @param secondLines the lines of the second file to compare
  * @return the diff
  */
-fun diff(first: File, second: File): FileDiff {
-    val firstLines = first.readLines()
-    val secondLines = second.readLines()
-
+fun diff(firstLines: List<String>, secondLines: List<String>): FileDiff {
     val unique = mutableMapOf<String, ULong>()
     var counter = 0UL
 

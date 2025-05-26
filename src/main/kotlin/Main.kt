@@ -2,6 +2,7 @@ package com.revtekk.blaze
 
 import com.revtekk.blaze.common.Command
 import com.revtekk.blaze.common.CommandArgumentValidationException
+import com.revtekk.blaze.common.CommandExecutionException
 import com.revtekk.blaze.diff.DiffCommand
 import kotlin.system.exitProcess
 
@@ -17,10 +18,12 @@ fun main(args: Array<String>) {
     try {
         val command = getCommand(args)
         command.execute()
-    } catch (e: CommandArgumentValidationException) {
-        error(e)
     } catch (e: Exception) {
-        fatalError(e)
+        when(e) {
+            is CommandArgumentValidationException -> error(e)
+            is CommandExecutionException -> error(e)
+            else -> fatalError(e)
+        }
     }
 }
 

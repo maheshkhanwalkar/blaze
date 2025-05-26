@@ -11,7 +11,7 @@ class DiffTest {
         val file1 = createTempFile(content = "line1\nline2\nline3")
         val file2 = createTempFile(content = "line1\nline2\nline3")
 
-        val result = diff(file1, file2)
+        val result = diff(file1.readLines(), file2.readLines())
 
         val expectedSegments = listOf(
             DiffSegment(
@@ -30,7 +30,7 @@ class DiffTest {
         val file1 = createTempFile(content = "lineA\nlineB\nlineC")
         val file2 = createTempFile(content = "lineX\nlineY\nlineZ")
 
-        val result = diff(file1, file2)
+        val result = diff(file1.readLines(), file2.readLines())
 
         val expectedSegments = listOf(
             DiffSegment(
@@ -52,7 +52,7 @@ class DiffTest {
         val file1 = createTempFile(content = "line1\nline2")
         val file2 = createTempFile(content = "line1\nline2\nline3")
 
-        val result = diff(file1, file2)
+        val result = diff(file1.readLines(), file2.readLines())
 
         val expectedSegments = listOf(
             DiffSegment(
@@ -75,7 +75,7 @@ class DiffTest {
         val file1 = createTempFile(content = "line1\nline2\nline3")
         val file2 = createTempFile(content = "line1\nline2")
 
-        val result = diff(file1, file2)
+        val result = diff(file1.readLines(), file2.readLines())
 
         val expectedSegments = listOf(
             DiffSegment(
@@ -98,7 +98,7 @@ class DiffTest {
         val file1 = createTempFile(content = "line1\nline2\nline3\nline4")
         val file2 = createTempFile(content = "line1\nlineA\nline3\nlineB")
 
-        val result = diff(file1, file2)
+        val result = diff(file1.readLines(), file2.readLines())
 
         val expectedSegments = listOf(
             DiffSegment(

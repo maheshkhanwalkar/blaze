@@ -2,6 +2,7 @@ package com.revtekk.blaze.diff
 
 import com.revtekk.blaze.common.Command
 import com.revtekk.blaze.common.CommandArgumentValidationException
+import com.revtekk.blaze.common.readLines
 import java.io.File
 
 /**
@@ -23,8 +24,11 @@ class DiffCommand: Command {
     override fun execute() {
         val first = File(args[0])
         val second = File(args[1])
-        val fileDiff = diff(first, second)
 
+        val firstLines = readLines(first.path)
+        val secondLines = readLines(second.path)
+
+        val fileDiff = diff(firstLines, secondLines)
         printDiff(fileDiff)
     }
 }
