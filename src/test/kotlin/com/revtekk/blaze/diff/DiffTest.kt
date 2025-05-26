@@ -38,9 +38,9 @@ class DiffTest {
                     DiffLine(DiffType.DELETE, 1, "lineA"),
                     DiffLine(DiffType.DELETE, 2, "lineB"),
                     DiffLine(DiffType.DELETE, 3, "lineC"),
-                    DiffLine(DiffType.INSERT, 4, "lineX"),
-                    DiffLine(DiffType.INSERT, 4, "lineY"),
-                    DiffLine(DiffType.INSERT, 4, "lineZ")
+                    DiffLine(DiffType.INSERT, 1, "lineX"),
+                    DiffLine(DiffType.INSERT, 1, "lineY"),
+                    DiffLine(DiffType.INSERT, 1, "lineZ")
                 )
             )
         )
@@ -109,7 +109,7 @@ class DiffTest {
             DiffSegment(
                 SegmentType.DIFF, listOf(
                     DiffLine(DiffType.DELETE, 2, "line2"),
-                    DiffLine(DiffType.INSERT, 3, "lineA")
+                    DiffLine(DiffType.INSERT, 2, "lineA")
                 )
             ),
             DiffSegment(
@@ -120,7 +120,7 @@ class DiffTest {
             DiffSegment(
                 SegmentType.DIFF, listOf(
                     DiffLine(DiffType.DELETE, 4, "line4"),
-                    DiffLine(DiffType.INSERT, 5, "lineB")
+                    DiffLine(DiffType.INSERT, 4, "lineB")
                 )
             )
         )

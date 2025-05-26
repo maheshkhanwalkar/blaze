@@ -73,6 +73,7 @@ fun diff(first: File, second: File): FileDiff {
          * the LCS -- which marks the end of the current DIFF segment and the start
          * of a new EQUAL segment.
          */
+        val iStart = i
         while (i < result.firstPos[k]) {
             if (state == ProcessingState.NONE) {
                 state = ProcessingState.IN_DIFF
@@ -95,10 +96,10 @@ fun diff(first: File, second: File): FileDiff {
             }
 
             /*
-             * we use 'i' here because the positions are anchored against the numbering of the
-             * original file.
+             * we use 'iStart' here because the positions are anchored against the numbering of the
+             * original file, and it would be the position prior to any deletions.
              */
-            lines.add(DiffLine(DiffType.INSERT, i+1, secondLines[j]))
+            lines.add(DiffLine(DiffType.INSERT, iStart + 1, secondLines[j]))
             j++
         }
 
@@ -126,13 +127,14 @@ fun diff(first: File, second: File): FileDiff {
         state = ProcessingState.IN_DIFF
     }
 
+    val iStart = i
     while (i < firstLines.size) {
         lines.add(DiffLine(DiffType.DELETE, i+1, firstLines[i]))
         i++
     }
 
     while (j < secondLines.size) {
-        lines.add(DiffLine(DiffType.INSERT, i+1, secondLines[j]))
+        lines.add(DiffLine(DiffType.INSERT, iStart+1, secondLines[j]))
         j++
     }
 
