@@ -1,25 +1,30 @@
 package com.revtekk.blaze.diff
 
+import com.revtekk.blaze.common.Command
+import com.revtekk.blaze.common.CommandArgumentValidationException
 import java.io.File
-import kotlin.system.exitProcess
 
 /**
- * diff subcommand runner.
+ * Command to compute the difference between two files
  *
- * main() in Main.kt calls this function when the cmdline args contain
- * the 'diff' top-level flag.
+ * @property args first file path, second file path
+ * @throws CommandArgumentValidationException if insufficient arguments are provided to run the command
  *
- * @param args command line arguments for diff
+ * Usage: diff <first_file> <second_file>
  */
-fun runDiff(args: List<String>) {
-    if (args.size != 2) {
-        println("Usage: blaze diff <file-1> <file-2>")
-        exitProcess(1)
+class DiffCommand: Command {
+    constructor(args: List<String>) : super(args) {
+        if (args.size != 2) {
+            throw CommandArgumentValidationException(
+                "diff: insufficient arguments specified, expected 2, got ${args.size}")
+        }
     }
 
-    val first = args[0]
-    val second = args[1]
-    val fileDiff = diff(File(first), File(second))
+    override fun execute() {
+        val first = File(args[0])
+        val second = File(args[1])
+        val fileDiff = diff(first, second)
 
-    printDiff(fileDiff)
+        printDiff(fileDiff)
+    }
 }
