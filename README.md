@@ -12,3 +12,10 @@ Implements file diff functionality
 ```shell
 blaze diff <file-1> <file-2>
 ```
+
+### merge
+Implements merge functionality
+
+```shell
+blaze merge <original-file> <v1-file> <v2-file>
+```

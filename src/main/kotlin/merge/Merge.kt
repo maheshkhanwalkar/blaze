@@ -59,6 +59,9 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
             val v1Types = v1Lines.map { it.type }.toSet()
             val v2Types = v2Lines.map { it.type }.toSet()
 
+            /*
+             * Conflict conditions.
+             */
             if ((LineModificationType.INSERT in v1Types && LineModificationType.INSERT in v2Types) ||
                 (LineModificationType.REPLACE in v1Types && LineModificationType.REPLACE in v2Types) ||
                 (LineModificationType.REPLACE in v1Types && LineModificationType.DELETE in v2Types) ||
@@ -80,9 +83,7 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
                 segments.add(MergeConflict(v1Lines, v2Lines))
 
                 if (noReplace) {
-                    if (lineNo < originalLines.size) {
-                        currLines.add(originalLines[lineNo])
-                    }
+                    addOriginalLine(lineNo, currLines, originalLines)
                 }
             } else {
                 /*
@@ -102,28 +103,17 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
             }
         } else if (v1Lines != null || v2Lines != null) {
             val lines = v1Lines ?: v2Lines!!
+            append(currLines, lines)
 
-            lines.forEach {
-                when(it.type) {
-                    LineModificationType.INSERT -> currLines.add(it.line)
-                    LineModificationType.REPLACE -> currLines.add(it.line)
-                    LineModificationType.DELETE -> {}
-                }
-            }
-
-            /**
+            /*
              * When handling an INSERT line, the original line should still be
              * retained as well.
              */
             if (lines.getOrNull(0)?.type == LineModificationType.INSERT) {
-                if (lineNo < originalLines.size) {
-                    currLines.add(originalLines[lineNo])
-                }
+                addOriginalLine(lineNo, currLines, originalLines)
             }
         } else {
-            if (lineNo < originalLines.size) {
-                currLines.add(originalLines[lineNo])
-            }
+            addOriginalLine(lineNo, currLines, originalLines)
         }
     }
 
@@ -151,7 +141,7 @@ private fun categorise(diff: FileDiff): Map<Int, List<LineModification>> {
             continue
         }
 
-        /**
+        /*
          * Now comes the complicated part -- we've got both INSERT and DELETE types in this diff
          * segment, so that means that some of these will coalesce into a REPLACE type.
          *
@@ -200,6 +190,20 @@ private fun addToMap(map: MutableMap<Int, MutableList<LineModification>>, lineNo
         map[lineNo]!!.add(line)
     } else {
         map[lineNo] = mutableListOf(line)
+    }
+}
+
+private fun append(currLines: MutableList<String>, lines: List<LineModification>) {
+    lines.filter {
+        it.type == LineModificationType.INSERT || it.type == LineModificationType.REPLACE
+    }.forEach {
+        currLines.add(it.line)
+    }
+}
+
+private fun addOriginalLine(lineNo: Int, currLines: MutableList<String>, originalLines: List<String>) {
+    if (lineNo < originalLines.size) {
+        currLines.add(originalLines[lineNo])
     }
 }
 
