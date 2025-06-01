@@ -4,6 +4,7 @@ import com.revtekk.blaze.common.Command
 import com.revtekk.blaze.common.CommandArgumentValidationException
 import com.revtekk.blaze.common.CommandExecutionException
 import com.revtekk.blaze.diff.DiffCommand
+import com.revtekk.blaze.merge.MergeCommand
 import kotlin.system.exitProcess
 
 /**
@@ -31,9 +32,10 @@ private fun getCommand(args: Array<String>): Command {
     val command = args[0]
     val remArgs = args.drop(1)
 
-    when(command) {
-        "diff" -> return DiffCommand(remArgs)
-        else -> throw IllegalArgumentException("Unknown command: $command")
+    return when(command) {
+        "diff"  -> DiffCommand(remArgs)
+        "merge" -> MergeCommand(remArgs)
+        else -> throw CommandArgumentValidationException("unknown command: $command")
     }
 }
 
