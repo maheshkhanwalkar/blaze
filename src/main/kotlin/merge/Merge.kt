@@ -57,12 +57,31 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
         val v2Lines = v2Categories[lineNo + 1]
 
         if (v1Lines != null && v2Lines != null) {
-            /*
-             * There are scenarios where this does not necessarily conflict, but for now
-             * leaving this as a TO-DO, since we need to flesh out the conflict detection
-             * and handling logic.
-             */
-            TODO("CONFLICT: line $lineNo is modified in both v1 and v2")
+            val v1Types = v1Lines.map { it.type }.toSet()
+            val v2Types = v2Lines.map { it.type }.toSet()
+
+            if ((LineModificationType.INSERT in v1Types && LineModificationType.INSERT in v2Types) ||
+                (LineModificationType.REPLACE in v1Types && LineModificationType.REPLACE in v2Types) ||
+                (LineModificationType.REPLACE in v1Types && LineModificationType.DELETE in v2Types) ||
+                (LineModificationType.DELETE in v1Types && LineModificationType.REPLACE in v2Types)
+            ) {
+               TODO("Handle conflict")
+            } else {
+                /*
+                 * It cannot be the case that both v1Lines and v2Lines contain the same type, as that
+                 * would be a merge conflict -- but the code below is written like this, so we
+                 * don't need to do a much of if-else(s) based on whether the INSERT or REPLACE is
+                 * in v1Lines or v2Lines.
+                 */
+                val inserts = v1Lines.filter { it.type == LineModificationType.INSERT } +
+                        v2Lines.filter { it.type == LineModificationType.INSERT }
+                val replacements = v1Lines.filter { it.type == LineModificationType.REPLACE } +
+                        v2Lines.filter { it.type == LineModificationType.REPLACE }
+
+                // Handle REPLACE first, then INSERT to preserve correct ordering
+                replacements.forEach { currLines.add(it.line) }
+                inserts.forEach { currLines.add(it.line) }
+            }
         } else if (v1Lines != null || v2Lines != null) {
             val lines = v1Lines ?: v2Lines!!
 
