@@ -28,9 +28,15 @@ class MergeCommand: Command {
 
         val result = merge(originalLines, v1Lines, v2Lines)
         result.segments.forEach {
-            // FIXME once merge conflict detection is implemented, need to handle this
             if (it is MergeLines) {
                 println(it.lines.joinToString("\n"))
+            }
+            if (it is MergeConflict) {
+                println("--- @blaze:mg_conflict:v1 ---")
+                println(it.v1Changes.joinToString("\n"))
+                println("--- @blaze:mg_conflict:v2 ---")
+                println(it.v2Changes.joinToString("\n"))
+                println("--- @blaze:mg_conflict:end ---")
             }
         }
     }

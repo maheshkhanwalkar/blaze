@@ -1,7 +1,6 @@
 package com.revtekk.blaze.merge
 
 import com.revtekk.blaze.diff.DiffLine
-import com.revtekk.blaze.diff.DiffSegment
 import com.revtekk.blaze.diff.DiffType
 import com.revtekk.blaze.diff.FileDiff
 import com.revtekk.blaze.diff.SegmentType
@@ -9,7 +8,7 @@ import com.revtekk.blaze.diff.diff
 
 interface MergeSegment
 
-data class MergeConflict(private val v1Changes: DiffSegment, private val v2Changes: DiffSegment): MergeSegment
+data class MergeConflict(val v1Changes: List<String>, val v2Changes: List<String>): MergeSegment
 data class MergeLines(val lines: List<String>): MergeSegment
 
 data class MergeResult(val segments: List<MergeSegment>)
@@ -65,7 +64,26 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
                 (LineModificationType.REPLACE in v1Types && LineModificationType.DELETE in v2Types) ||
                 (LineModificationType.DELETE in v1Types && LineModificationType.REPLACE in v2Types)
             ) {
-               TODO("Handle conflict")
+                collect(currLines, segments)
+
+                val noReplace = v1Lines.none { it.type == LineModificationType.REPLACE } &&
+                        v2Lines.none { it.type == LineModificationType.REPLACE }
+
+                val v1Lines = v1Lines.filter {
+                    it.type == LineModificationType.INSERT || it.type == LineModificationType.REPLACE
+                }.map { it.line }
+
+                val v2Lines = v2Lines.filter {
+                    it.type == LineModificationType.INSERT || it.type == LineModificationType.REPLACE
+                }.map { it.line }
+
+                segments.add(MergeConflict(v1Lines, v2Lines))
+
+                if (noReplace) {
+                    if (lineNo < originalLines.size) {
+                        currLines.add(originalLines[lineNo])
+                    }
+                }
             } else {
                 /*
                  * It cannot be the case that both v1Lines and v2Lines contain the same type, as that
@@ -109,10 +127,7 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
         }
     }
 
-    if (currLines.isNotEmpty()) {
-        segments.add(MergeLines(currLines.toList()))
-    }
-
+    collect(currLines, segments)
     return MergeResult(segments)
 }
 
@@ -185,5 +200,12 @@ private fun addToMap(map: MutableMap<Int, MutableList<LineModification>>, lineNo
         map[lineNo]!!.add(line)
     } else {
         map[lineNo] = mutableListOf(line)
+    }
+}
+
+private fun collect(currLines: MutableList<String>, segments: MutableList<MergeSegment>) {
+    if (currLines.isNotEmpty()) {
+        segments.add(MergeLines(currLines.toList()))
+        currLines.clear()
     }
 }
