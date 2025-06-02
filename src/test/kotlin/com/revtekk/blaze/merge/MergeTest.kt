@@ -114,4 +114,30 @@ class MergeTest {
         assertTrue(segment is MergeLines)
         assertEquals(listOf("v2-line1", "v1-line2", "v2-line3", "v1-line4"), segment.lines)
     }
+
+    @Test
+    fun `test merge with prepended changes and replacement`() {
+        val original = listOf("line1", "line2", "line3")
+        val v1 = listOf("v1-line1", "v1-line1-2", "line1", "line2", "line3")
+        val v2 = listOf("v2-line1", "line2", "line3")
+
+        val result = merge(original, v1, v2)
+
+        val segment = result.segments[0]
+        assertTrue(segment is MergeLines)
+        assertEquals(listOf("v1-line1", "v1-line1-2", "v2-line1", "line2", "line3"), segment.lines)
+    }
+
+    @Test
+    fun `test merge with replacements and deletes`() {
+        val original = listOf("line1", "line2", "line3")
+        val v1 = listOf("line1", "line3")
+        val v2 = listOf("line1", "v2-line2", "v2-line2-2", "line3")
+
+        val result = merge(original, v1, v2)
+
+        val segment = result.segments[0]
+        assertTrue(segment is MergeLines)
+        assertEquals(listOf("line1", "v2-line2", "v2-line2-2", "line3"), segment.lines)
+    }
 }

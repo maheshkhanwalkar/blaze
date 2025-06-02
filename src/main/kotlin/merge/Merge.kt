@@ -61,11 +61,17 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
 
             /*
              * Conflict conditions.
+             *
+             * Inserts conflict with each other, due to a lack of a good reconciliation strategy.
+             * It is definitely possible to auto-resolve via some combination, e.g. accept both and
+             * just concatenate, but that likely causes more problems than it solves.
+             *
+             * Replaces directly conflict each other, as they replace the same line in the original
+             * to two different lines.
+             *
              */
             if ((LineModificationType.INSERT in v1Types && LineModificationType.INSERT in v2Types) ||
-                (LineModificationType.REPLACE in v1Types && LineModificationType.REPLACE in v2Types) ||
-                (LineModificationType.REPLACE in v1Types && LineModificationType.DELETE in v2Types) ||
-                (LineModificationType.DELETE in v1Types && LineModificationType.REPLACE in v2Types)
+                (LineModificationType.REPLACE in v1Types && LineModificationType.REPLACE in v2Types)
             ) {
                 collect(currLines, segments)
 
@@ -97,9 +103,18 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
                 val replacements = v1Lines.filter { it.type == LineModificationType.REPLACE } +
                         v2Lines.filter { it.type == LineModificationType.REPLACE }
 
-                // Handle REPLACE first, then INSERT to preserve correct ordering
-                replacements.forEach { currLines.add(it.line) }
-                inserts.forEach { currLines.add(it.line) }
+                /*
+                 * Handle REPLACE first, then INSERT to preserve correct ordering -- except for
+                 * the first line where we need to do the INSERT(s) first, since they are actually
+                 * inserting *before* the first line.
+                 */
+                if (lineNo == 0) {
+                    inserts.forEach { currLines.add(it.line) }
+                    replacements.forEach { currLines.add(it.line) }
+                } else {
+                    replacements.forEach { currLines.add(it.line) }
+                    inserts.forEach { currLines.add(it.line) }
+                }
             }
         } else if (v1Lines != null || v2Lines != null) {
             val lines = v1Lines ?: v2Lines!!
@@ -162,7 +177,7 @@ private fun categorise(diff: FileDiff): Map<Int, List<LineModification>> {
         }
 
         while (insPos < seg.lines.size) {
-            val diffLine = seg.lines[delPos]
+            val diffLine = seg.lines[insPos]
             addToMap(result, diffLine.lineNo, LineModification(LineModificationType.INSERT, diffLine.lineNo, diffLine.line))
             insPos++
         }
