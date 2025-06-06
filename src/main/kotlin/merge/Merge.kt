@@ -95,7 +95,7 @@ fun merge(originalLines: List<String>, v1Lines: List<String>, v2Lines: List<Stri
                 /*
                  * It cannot be the case that both v1Lines and v2Lines contain the same type, as that
                  * would be a merge conflict -- but the code below is written like this, so we
-                 * don't need to do a much of if-else(s) based on whether the INSERT or REPLACE is
+                 * don't need to do a bunch of if-else(s) based on whether the INSERT or REPLACE is
                  * in v1Lines or v2Lines.
                  */
                 val inserts = v1Lines.filter { it.type == LineModificationType.INSERT } +
