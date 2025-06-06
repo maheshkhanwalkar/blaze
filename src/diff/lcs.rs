@@ -1,12 +1,33 @@
 use array2d::Array2D;
 use std::collections::HashMap;
 
+/// Represents a subsequence found as the result of a longest common subsequence (LCS) computation.
+///
+/// # Type Parameters
+///
+/// * `T` - The type of elements in the subsequence.
+///
+/// # Fields
+///
+/// * `lcs` - The list of elements that are part of the longest common subsequence.
+/// * `first_pos` - The list of indices in the first list that are part of the subsequence.
+/// * `second_pos` - The list of indices in the second list that are part of the subsequence.
 pub struct Subsequence<T> {
     pub lcs: Vec<T>,
     pub first_pos: Vec<i32>,
     pub second_pos: Vec<i32>,
 }
 
+/// Computes the longest common subsequence between two input lists.
+///
+/// # Arguments
+///
+/// * `first` - The first input list
+/// * `second` - The second input list
+///
+/// # Returns
+///
+/// The longest common subsequence shared between the two input lists
 pub fn longest_common_subsequence<T: Eq + Clone>(first: Vec<T>, second: Vec<T>) -> Subsequence<T> {
     let mut T = Array2D::filled_with(0, first.len(), second.len());
     let mut back: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
