@@ -337,7 +337,7 @@ fn find_insert_position(lines: &Vec<DiffLine>) -> usize {
 }
 
 fn add_to_map(
-    map: &mut std::collections::HashMap<usize, Vec<LineModification>>,
+    map: &mut HashMap<usize, Vec<LineModification>>,
     line_no: usize,
     line: LineModification,
 ) {

@@ -54,7 +54,7 @@ enum ProcessingState {
 ///
 /// The diff between the files
 pub fn diff(first_lines: &Vec<String>, second_lines: &Vec<String>) -> FileDiff {
-    let mut unique: HashMap<String, usize> = HashMap::new();
+    let mut unique: HashMap<&String, usize> = HashMap::new();
     let mut counter: usize = 0;
 
     if first_lines.is_empty() && second_lines.is_empty() {
@@ -63,13 +63,13 @@ pub fn diff(first_lines: &Vec<String>, second_lines: &Vec<String>) -> FileDiff {
 
     for line in first_lines {
         if !unique.contains_key(line) {
-            unique.insert(line.clone(), counter);
+            unique.insert(line, counter);
             counter += 1;
         }
     }
     for line in second_lines {
         if !unique.contains_key(line) {
-            unique.insert(line.clone(), counter);
+            unique.insert(line, counter);
             counter += 1;
         }
     }
