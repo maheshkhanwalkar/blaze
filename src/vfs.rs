@@ -1,10 +1,24 @@
 use crate::command::CommandExecutionError;
+use std::env::current_dir;
 use std::fs;
+use std::path::PathBuf;
 
 pub fn vfs_already_initialized() -> bool {
-    // FIXME: it's actually more complicated than this -- since we can execute this
-    //  command in any directory, we would need to recurse upwards
-    fs::metadata(".blaze").is_ok()
+    let mut current_dir = if let Ok(dir) = current_dir() {
+        dir
+    } else {
+        return false;
+    };
+
+    while !current_dir.join(".blaze").exists() {
+        current_dir = if let Some(parent) = current_dir.parent() {
+            PathBuf::from(parent)
+        } else {
+            return false;
+        };
+    }
+
+    true
 }
 
 pub fn vfs_init() -> Result<(), CommandExecutionError> {
