@@ -1,5 +1,5 @@
 use crate::diff::{diff, DiffLine, DiffType, FileDiff, SegmentType};
-use crate::merge::MergeSegmentType::Lines;
+use crate::merge::MergeSegmentType::{Conflict, Lines};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 
@@ -137,7 +137,7 @@ fn merge(
                     .collect();
 
                 segments.push(MergeSegment {
-                    segment_type: MergeSegmentType::Conflict,
+                    segment_type: Conflict,
                     v1_changes: v1_filtered,
                     v2_changes: v2_filtered,
                     lines: vec![],
@@ -373,5 +373,320 @@ fn collect(curr_lines: &mut Vec<String>, segments: &mut Vec<MergeSegment>) {
             lines: curr_lines.clone(),
         });
         curr_lines.clear()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_merge_with_no_differences() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v1 = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v2 = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        assert_eq!(1, result.segments.len());
+        let segment = &result.segments[0];
+        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
+        assert_eq!(original, segment.lines);
+    }
+
+    #[test]
+    fn test_merge_with_non_conflicting_changes() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v1 = vec![
+            "line1".to_string(),
+            "v1-line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v2 = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "v2-line3".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        assert_eq!(1, result.segments.len());
+        let segment = &result.segments[0];
+        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
+        assert_eq!(
+            vec![
+                "line1".to_string(),
+                "v1-line2".to_string(),
+                "v2-line3".to_string()
+            ],
+            segment.lines
+        );
+    }
+
+    #[test]
+    fn test_merge_with_conflicting_changes() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v1 = vec![
+            "line1".to_string(),
+            "v1-line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v2 = vec![
+            "line1".to_string(),
+            "v2-line2".to_string(),
+            "line3".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        assert_eq!(3, result.segments.len());
+        assert!(matches!(
+            result.segments[0].segment_type,
+            Lines
+        ));
+        assert!(matches!(
+            result.segments[1].segment_type,
+            Conflict
+        ));
+        assert!(matches!(
+            result.segments[2].segment_type,
+            Lines
+        ));
+
+        let conflict = &result.segments[1];
+        assert_eq!(vec!["v1-line2".to_string()], conflict.v1_changes);
+        assert_eq!(vec!["v2-line2".to_string()], conflict.v2_changes);
+    }
+
+    #[test]
+    fn test_merge_with_multiple_conflicts() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v1 = vec![
+            "line1".to_string(),
+            "v1-line2".to_string(),
+            "v1-line3".to_string(),
+        ];
+        let v2 = vec![
+            "line1".to_string(),
+            "v2-line2".to_string(),
+            "v2-line3".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        assert_eq!(3, result.segments.len());
+        assert!(matches!(
+            result.segments[0].segment_type,
+            MergeSegmentType::Lines
+        ));
+        assert!(matches!(
+            result.segments[1].segment_type,
+            MergeSegmentType::Conflict
+        ));
+        assert!(matches!(
+            result.segments[2].segment_type,
+            MergeSegmentType::Conflict
+        ));
+
+        let conflict1 = &result.segments[1];
+        assert_eq!(vec!["v1-line2".to_string()], conflict1.v1_changes);
+        assert_eq!(vec!["v2-line2".to_string()], conflict1.v2_changes);
+
+        let conflict2 = &result.segments[2];
+        assert_eq!(vec!["v1-line3".to_string()], conflict2.v1_changes);
+        assert_eq!(vec!["v2-line3".to_string()], conflict2.v2_changes);
+    }
+
+    #[test]
+    fn test_merge_with_insertions_in_both_versions() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v1 = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "v1-line".to_string(),
+            "line3".to_string(),
+        ];
+        let v2 = vec![
+            "line1".to_string(),
+            "v2-line".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        assert_eq!(1, result.segments.len());
+        let segment = &result.segments[0];
+        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
+        assert_eq!(
+            vec![
+                "line1".to_string(),
+                "v2-line".to_string(),
+                "line2".to_string(),
+                "v1-line".to_string(),
+                "line3".to_string()
+            ],
+            segment.lines
+        );
+    }
+
+    #[test]
+    fn test_merge_with_deletions_in_both_versions() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+            "line4".to_string(),
+        ];
+        let v1 = vec![
+            "line1".to_string(),
+            "line3".to_string(),
+            "line4".to_string(),
+        ];
+        let v2 = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line4".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        assert_eq!(1, result.segments.len());
+        let segment = &result.segments[0];
+        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
+        assert_eq!(
+            vec!["line1".to_string(), "line4".to_string()],
+            segment.lines
+        );
+    }
+
+    #[test]
+    fn test_merge_with_interleaved_changes() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+            "line4".to_string(),
+        ];
+        let v1 = vec![
+            "line1".to_string(),
+            "v1-line2".to_string(),
+            "line3".to_string(),
+            "v1-line4".to_string(),
+        ];
+        let v2 = vec![
+            "v2-line1".to_string(),
+            "line2".to_string(),
+            "v2-line3".to_string(),
+            "line4".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        let segment = &result.segments[0];
+        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
+        assert_eq!(
+            vec![
+                "v2-line1".to_string(),
+                "v1-line2".to_string(),
+                "v2-line3".to_string(),
+                "v1-line4".to_string()
+            ],
+            segment.lines
+        );
+    }
+
+    #[test]
+    fn test_merge_with_prepended_changes_and_replacement() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v1 = vec![
+            "v1-line1".to_string(),
+            "v1-line1-2".to_string(),
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v2 = vec![
+            "v2-line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        let segment = &result.segments[0];
+        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
+        assert_eq!(
+            vec![
+                "v1-line1".to_string(),
+                "v1-line1-2".to_string(),
+                "v2-line1".to_string(),
+                "line2".to_string(),
+                "line3".to_string()
+            ],
+            segment.lines
+        );
+    }
+
+    #[test]
+    fn test_merge_with_replacements_and_deletes() {
+        let original = vec![
+            "line1".to_string(),
+            "line2".to_string(),
+            "line3".to_string(),
+        ];
+        let v1 = vec!["line1".to_string(), "line3".to_string()];
+        let v2 = vec![
+            "line1".to_string(),
+            "v2-line2".to_string(),
+            "v2-line2-2".to_string(),
+            "line3".to_string(),
+        ];
+
+        let result = merge(&original, &v1, &v2);
+
+        let segment = &result.segments[0];
+        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
+        assert_eq!(
+            vec![
+                "line1".to_string(),
+                "v2-line2".to_string(),
+                "v2-line2-2".to_string(),
+                "line3".to_string()
+            ],
+            segment.lines
+        );
     }
 }
