@@ -7,7 +7,7 @@ pub fn read_lines(path: &String) -> Result<Vec<String>, CommandExecutionError> {
 
     if file.is_err() {
         return Err(CommandExecutionError {
-            message: "file not found {path}".to_string(),
+            message: format!("file not found {path}").to_string(),
         });
     }
 

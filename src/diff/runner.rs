@@ -30,7 +30,7 @@ impl Command for DiffCommand {
             Err(err) => return Err(err),
         };
 
-        let file_diff = diff(first_lines, second_lines);
+        let file_diff = diff(&first_lines, &second_lines);
         print_diff(file_diff);
         Ok(())
     }

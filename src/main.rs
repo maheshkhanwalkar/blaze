@@ -1,4 +1,4 @@
-use blaze::{command, diff};
+use blaze::{command, diff, merge};
 use std::process::exit;
 
 fn main() {
@@ -27,6 +27,7 @@ fn get_command(args: &Vec<String>) -> Box<dyn command::Command> {
 
     match command.as_str() {
         "diff" => Box::new(diff::runner::DiffCommand { args: rem_args }),
+        "merge" => Box::new(merge::runner::MergeCommand { args: rem_args }),
         &_ => panic!("unknown command: {command}"),
     }
 }

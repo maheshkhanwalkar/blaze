@@ -7,7 +7,7 @@ use crate::diff::DiffType::Insert;
 use crate::diff::ProcessingState::{InDiff, InEqual};
 use std::collections::HashMap;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum DiffType {
     Insert,
     Delete,
@@ -22,18 +22,18 @@ pub enum SegmentType {
 
 #[derive(Clone)]
 pub struct DiffLine {
-    diff_type: DiffType,
-    line_no: usize,
-    line: String,
+    pub diff_type: DiffType,
+    pub line_no: usize,
+    pub line: String,
 }
 
 pub struct DiffSegment {
-    segment_type: SegmentType,
-    lines: Vec<DiffLine>,
+    pub(crate) segment_type: SegmentType,
+    pub(crate) lines: Vec<DiffLine>,
 }
 
 pub struct FileDiff {
-    segments: Vec<DiffSegment>,
+    pub(crate) segments: Vec<DiffSegment>,
 }
 
 #[derive(PartialEq, Eq)]
@@ -53,7 +53,7 @@ enum ProcessingState {
 /// # Returns
 ///
 /// The diff between the files
-pub fn diff(first_lines: Vec<String>, second_lines: Vec<String>) -> FileDiff {
+pub fn diff(first_lines: &Vec<String>, second_lines: &Vec<String>) -> FileDiff {
     let mut unique: HashMap<String, usize> = HashMap::new();
     let mut counter: usize = 0;
 
@@ -61,13 +61,13 @@ pub fn diff(first_lines: Vec<String>, second_lines: Vec<String>) -> FileDiff {
         return FileDiff { segments: vec![] };
     }
 
-    for line in &first_lines {
+    for line in first_lines {
         if !unique.contains_key(line) {
             unique.insert(line.clone(), counter);
             counter += 1;
         }
     }
-    for line in &second_lines {
+    for line in second_lines {
         if !unique.contains_key(line) {
             unique.insert(line.clone(), counter);
             counter += 1;
@@ -244,7 +244,7 @@ mod tests {
     fn test_identical_files() {
         let first = vec!["line1".to_string(), "line2".to_string()];
         let second = first.clone();
-        let result = diff(first, second);
+        let result = diff(&first, &second);
         assert_eq!(result.segments.len(), 1);
         assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
     }
@@ -253,7 +253,7 @@ mod tests {
     fn test_completely_different_files() {
         let first = vec!["line1".to_string()];
         let second = vec!["line2".to_string()];
-        let result = diff(first, second);
+        let result = diff(&first, &second);
         assert_eq!(result.segments.len(), 1);
         assert_eq!(result.segments[0].segment_type, SegmentType::Diff);
     }
@@ -262,7 +262,7 @@ mod tests {
     fn test_partial_diff() {
         let first = vec!["line1".to_string(), "line2".to_string()];
         let second = vec!["line1".to_string(), "line3".to_string()];
-        let result = diff(first, second);
+        let result = diff(&first, &second);
         assert_eq!(result.segments.len(), 2);
         assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
         assert_eq!(result.segments[1].segment_type, SegmentType::Diff);
@@ -272,7 +272,7 @@ mod tests {
     fn test_alternating_segments() {
         let first = vec!["a".to_string(), "b".to_string(), "c".to_string(), "d".to_string()];
         let second = vec!["a".to_string(), "x".to_string(), "c".to_string(), "y".to_string()];
-        let result = diff(first, second);
+        let result = diff(&first, &second);
         assert_eq!(result.segments.len(), 4);
         assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
         assert_eq!(result.segments[1].segment_type, SegmentType::Diff);
@@ -284,7 +284,7 @@ mod tests {
     fn test_changes_at_start() {
         let first = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let second = vec!["x".to_string(), "y".to_string(), "c".to_string()];
-        let result = diff(first, second);
+        let result = diff(&first, &second);
         assert_eq!(result.segments.len(), 2);
         assert_eq!(result.segments[0].segment_type, SegmentType::Diff);
         assert_eq!(result.segments[1].segment_type, SegmentType::Equal);
@@ -294,7 +294,7 @@ mod tests {
     fn test_changes_at_end() {
         let first = vec!["a".to_string(), "b".to_string(), "c".to_string()];
         let second = vec!["a".to_string(), "x".to_string(), "y".to_string()];
-        let result = diff(first, second);
+        let result = diff(&first, &second);
         assert_eq!(result.segments.len(), 2);
         assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
         assert_eq!(result.segments[1].segment_type, SegmentType::Diff);
@@ -304,7 +304,7 @@ mod tests {
     fn test_empty_files() {
         let first: Vec<String> = vec![];
         let second: Vec<String> = vec![];
-        let result = diff(first, second);
+        let result = diff(&first, &second);
         assert_eq!(result.segments.len(), 0);
     }
 }
