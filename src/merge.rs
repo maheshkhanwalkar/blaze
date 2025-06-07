@@ -460,18 +460,9 @@ mod tests {
         let result = merge(&original, &v1, &v2);
 
         assert_eq!(3, result.segments.len());
-        assert!(matches!(
-            result.segments[0].segment_type,
-            Lines
-        ));
-        assert!(matches!(
-            result.segments[1].segment_type,
-            Conflict
-        ));
-        assert!(matches!(
-            result.segments[2].segment_type,
-            Lines
-        ));
+        assert!(matches!(result.segments[0].segment_type, Lines));
+        assert!(matches!(result.segments[1].segment_type, Conflict));
+        assert!(matches!(result.segments[2].segment_type, Lines));
 
         let conflict = &result.segments[1];
         assert_eq!(vec!["v1-line2".to_string()], conflict.v1_changes);
