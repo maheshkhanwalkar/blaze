@@ -1,24 +1,9 @@
 use crate::command::CommandExecutionError;
-use std::env::current_dir;
+use crate::file::find_dir;
 use std::fs;
-use std::path::PathBuf;
 
 pub fn vfs_already_initialized() -> bool {
-    let mut current_dir = if let Ok(dir) = current_dir() {
-        dir
-    } else {
-        return false;
-    };
-
-    while !current_dir.join(".blaze").exists() {
-        current_dir = if let Some(parent) = current_dir.parent() {
-            PathBuf::from(parent)
-        } else {
-            return false;
-        };
-    }
-
-    true
+    find_dir(&String::from(".blaze"), true)
 }
 
 pub fn vfs_init() -> Result<(), CommandExecutionError> {
