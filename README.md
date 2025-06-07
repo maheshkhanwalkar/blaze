@@ -2,8 +2,8 @@
 
 ### Project Structure
 
-The `blaze` source is made up of `Main.kt` (the main entry point) and packages
-for each subcommand. The subcommand entry point in each package is `Runner.kt`,
+The `blaze` source is made up of `main.rs` (the main entry point) and packages
+for each subcommand. The subcommand entry point in each package is `runner.rs`,
 while the other files implement the core logic
 
 ### diff
