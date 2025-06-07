@@ -3,19 +3,18 @@ use crate::file::read_lines;
 use crate::merge::{merge, MergeSegmentType};
 
 pub struct MergeCommand {
-    pub args: Vec<String>
+    pub args: Vec<String>,
 }
 
 impl Command for MergeCommand {
     fn execute(&self) -> Result<(), CommandExecutionError> {
         if self.args.len() != 3 {
-            return Err(
-                CommandExecutionError {
-                    message:
-                    format!("merge: insufficient arguments specified, expected 3, got {size}",
-                            size = self.args.len())
-                }
-            )
+            return Err(CommandExecutionError {
+                message: format!(
+                    "merge: insufficient arguments specified, expected 3, got {size}",
+                    size = self.args.len()
+                ),
+            });
         }
 
         /*
@@ -31,15 +30,15 @@ impl Command for MergeCommand {
 
         let original_lines = match read_lines(original) {
             Ok(lines) => lines,
-            Err(e) => return Err(e)
+            Err(e) => return Err(e),
         };
         let v1_lines = match read_lines(v1) {
             Ok(lines) => lines,
-            Err(e) => return Err(e)
+            Err(e) => return Err(e),
         };
         let v2_lines = match read_lines(v2) {
             Ok(lines) => lines,
-            Err(e) => return Err(e)
+            Err(e) => return Err(e),
         };
 
         let result = merge(&original_lines, &v1_lines, &v2_lines);
@@ -48,7 +47,7 @@ impl Command for MergeCommand {
             match segment.segment_type {
                 MergeSegmentType::Lines => {
                     println!("{}", segment.lines.join("\n"));
-                },
+                }
                 MergeSegmentType::Conflict => {
                     println!("--- @blaze:mg_conflict:v1 ---");
                     println!("{}", segment.v1_changes.join("\n"));

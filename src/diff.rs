@@ -270,8 +270,18 @@ mod tests {
 
     #[test]
     fn test_alternating_segments() {
-        let first = vec!["a".to_string(), "b".to_string(), "c".to_string(), "d".to_string()];
-        let second = vec!["a".to_string(), "x".to_string(), "c".to_string(), "y".to_string()];
+        let first = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+        ];
+        let second = vec![
+            "a".to_string(),
+            "x".to_string(),
+            "c".to_string(),
+            "y".to_string(),
+        ];
         let result = diff(&first, &second);
         assert_eq!(result.segments.len(), 4);
         assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
