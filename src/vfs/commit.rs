@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::time::UNIX_EPOCH;
 
-type CommitHash = String;
+pub type CommitHash = String;
 
 #[derive(Serialize, Deserialize)]
 pub struct Reference {
@@ -30,7 +30,7 @@ pub struct Commit {
 }
 
 impl Commit {
-    fn new(author: Author, title: String, message: String, reference: Reference) -> Self {
+    pub fn new(author: Author, title: String, message: String, reference: Reference) -> Self {
         Commit {
             author,
             title,
