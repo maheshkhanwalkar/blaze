@@ -1,22 +1,18 @@
 use crate::diff::{diff, DiffLine, DiffType, FileDiff, SegmentType};
-use crate::merge::MergeSegmentType::{Conflict, Lines};
 use std::cmp::PartialEq;
 use std::collections::HashMap;
 
 pub mod runner;
 
-pub enum MergeSegmentType {
-    Conflict,
-    Lines,
-}
-
-pub struct MergeSegment {
-    segment_type: MergeSegmentType,
-
-    v1_changes: Vec<String>,
-    v2_changes: Vec<String>,
-
-    lines: Vec<String>,
+#[derive(PartialEq)]
+pub enum MergeSegment {
+    Conflict {
+        v1_changes: Vec<String>,
+        v2_changes: Vec<String>,
+    },
+    Lines {
+        lines: Vec<String>,
+    },
 }
 
 pub struct MergeResult {
@@ -136,11 +132,9 @@ fn merge(
                     .map(|l| l.line.clone())
                     .collect();
 
-                segments.push(MergeSegment {
-                    segment_type: Conflict,
+                segments.push(MergeSegment::Conflict {
                     v1_changes: v1_filtered,
                     v2_changes: v2_filtered,
-                    lines: vec![],
                 });
 
                 if no_replace {
@@ -366,10 +360,7 @@ fn add_original_line(line_no: usize, curr_lines: &mut Vec<String>, original_line
 
 fn collect(curr_lines: &mut Vec<String>, segments: &mut Vec<MergeSegment>) {
     if !curr_lines.is_empty() {
-        segments.push(MergeSegment {
-            segment_type: Lines,
-            v1_changes: vec![],
-            v2_changes: vec![],
+        segments.push(MergeSegment::Lines {
             lines: curr_lines.clone(),
         });
         curr_lines.clear()
@@ -379,6 +370,7 @@ fn collect(curr_lines: &mut Vec<String>, segments: &mut Vec<MergeSegment>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Lines;
 
     #[test]
     fn test_merge_with_no_differences() {
@@ -402,8 +394,13 @@ mod tests {
 
         assert_eq!(1, result.segments.len());
         let segment = &result.segments[0];
-        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
-        assert_eq!(original, segment.lines);
+
+        match segment {
+            MergeSegment::Lines { lines } => {
+                assert_eq!(original, *lines);
+            }
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
     }
 
     #[test]
@@ -428,15 +425,19 @@ mod tests {
 
         assert_eq!(1, result.segments.len());
         let segment = &result.segments[0];
-        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
-        assert_eq!(
-            vec![
-                "line1".to_string(),
-                "v1-line2".to_string(),
-                "v2-line3".to_string()
-            ],
-            segment.lines
-        );
+        match segment {
+            MergeSegment::Lines { lines } => {
+                assert_eq!(
+                    vec![
+                        "line1".to_string(),
+                        "v1-line2".to_string(),
+                        "v2-line3".to_string()
+                    ],
+                    *lines
+                );
+            }
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
     }
 
     #[test]
@@ -460,13 +461,24 @@ mod tests {
         let result = merge(&original, &v1, &v2);
 
         assert_eq!(3, result.segments.len());
-        assert!(matches!(result.segments[0].segment_type, Lines));
-        assert!(matches!(result.segments[1].segment_type, Conflict));
-        assert!(matches!(result.segments[2].segment_type, Lines));
-
-        let conflict = &result.segments[1];
-        assert_eq!(vec!["v1-line2".to_string()], conflict.v1_changes);
-        assert_eq!(vec!["v2-line2".to_string()], conflict.v2_changes);
+        match &result.segments[0] {
+            MergeSegment::Lines { .. } => (),
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
+        match &result.segments[1] {
+            MergeSegment::Conflict {
+                v1_changes,
+                v2_changes,
+            } => {
+                assert_eq!(vec!["v1-line2".to_string()], *v1_changes);
+                assert_eq!(vec!["v2-line2".to_string()], *v2_changes);
+            }
+            _ => panic!("Expected MergeSegment::Conflict"),
+        }
+        match &result.segments[2] {
+            MergeSegment::Lines { .. } => (),
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
     }
 
     #[test]
@@ -490,26 +502,30 @@ mod tests {
         let result = merge(&original, &v1, &v2);
 
         assert_eq!(3, result.segments.len());
-        assert!(matches!(
-            result.segments[0].segment_type,
-            MergeSegmentType::Lines
-        ));
-        assert!(matches!(
-            result.segments[1].segment_type,
-            MergeSegmentType::Conflict
-        ));
-        assert!(matches!(
-            result.segments[2].segment_type,
-            MergeSegmentType::Conflict
-        ));
-
-        let conflict1 = &result.segments[1];
-        assert_eq!(vec!["v1-line2".to_string()], conflict1.v1_changes);
-        assert_eq!(vec!["v2-line2".to_string()], conflict1.v2_changes);
-
-        let conflict2 = &result.segments[2];
-        assert_eq!(vec!["v1-line3".to_string()], conflict2.v1_changes);
-        assert_eq!(vec!["v2-line3".to_string()], conflict2.v2_changes);
+        match &result.segments[0] {
+            MergeSegment::Lines { .. } => (),
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
+        match &result.segments[1] {
+            MergeSegment::Conflict {
+                v1_changes,
+                v2_changes,
+            } => {
+                assert_eq!(vec!["v1-line2".to_string()], *v1_changes);
+                assert_eq!(vec!["v2-line2".to_string()], *v2_changes);
+            }
+            _ => panic!("Expected MergeSegment::Conflict"),
+        }
+        match &result.segments[2] {
+            MergeSegment::Conflict {
+                v1_changes,
+                v2_changes,
+            } => {
+                assert_eq!(vec!["v1-line3".to_string()], *v1_changes);
+                assert_eq!(vec!["v2-line3".to_string()], *v2_changes);
+            }
+            _ => panic!("Expected MergeSegment::Conflict"),
+        }
     }
 
     #[test]
@@ -535,18 +551,21 @@ mod tests {
         let result = merge(&original, &v1, &v2);
 
         assert_eq!(1, result.segments.len());
-        let segment = &result.segments[0];
-        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
-        assert_eq!(
-            vec![
-                "line1".to_string(),
-                "v2-line".to_string(),
-                "line2".to_string(),
-                "v1-line".to_string(),
-                "line3".to_string()
-            ],
-            segment.lines
-        );
+        match &result.segments[0] {
+            MergeSegment::Lines { lines } => {
+                assert_eq!(
+                    vec![
+                        "line1".to_string(),
+                        "v2-line".to_string(),
+                        "line2".to_string(),
+                        "v1-line".to_string(),
+                        "line3".to_string()
+                    ],
+                    *lines
+                );
+            }
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
     }
 
     #[test]
@@ -571,12 +590,12 @@ mod tests {
         let result = merge(&original, &v1, &v2);
 
         assert_eq!(1, result.segments.len());
-        let segment = &result.segments[0];
-        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
-        assert_eq!(
-            vec!["line1".to_string(), "line4".to_string()],
-            segment.lines
-        );
+        match &result.segments[0] {
+            MergeSegment::Lines { lines } => {
+                assert_eq!(vec!["line1".to_string(), "line4".to_string()], *lines);
+            }
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
     }
 
     #[test]
@@ -602,17 +621,20 @@ mod tests {
 
         let result = merge(&original, &v1, &v2);
 
-        let segment = &result.segments[0];
-        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
-        assert_eq!(
-            vec![
-                "v2-line1".to_string(),
-                "v1-line2".to_string(),
-                "v2-line3".to_string(),
-                "v1-line4".to_string()
-            ],
-            segment.lines
-        );
+        match &result.segments[0] {
+            MergeSegment::Lines { lines } => {
+                assert_eq!(
+                    vec![
+                        "v2-line1".to_string(),
+                        "v1-line2".to_string(),
+                        "v2-line3".to_string(),
+                        "v1-line4".to_string()
+                    ],
+                    *lines
+                );
+            }
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
     }
 
     #[test]
@@ -637,18 +659,21 @@ mod tests {
 
         let result = merge(&original, &v1, &v2);
 
-        let segment = &result.segments[0];
-        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
-        assert_eq!(
-            vec![
-                "v1-line1".to_string(),
-                "v1-line1-2".to_string(),
-                "v2-line1".to_string(),
-                "line2".to_string(),
-                "line3".to_string()
-            ],
-            segment.lines
-        );
+        match &result.segments[0] {
+            MergeSegment::Lines { lines } => {
+                assert_eq!(
+                    vec![
+                        "v1-line1".to_string(),
+                        "v1-line1-2".to_string(),
+                        "v2-line1".to_string(),
+                        "line2".to_string(),
+                        "line3".to_string()
+                    ],
+                    *lines
+                );
+            }
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
     }
 
     #[test]
@@ -668,16 +693,19 @@ mod tests {
 
         let result = merge(&original, &v1, &v2);
 
-        let segment = &result.segments[0];
-        assert!(matches!(segment.segment_type, MergeSegmentType::Lines));
-        assert_eq!(
-            vec![
-                "line1".to_string(),
-                "v2-line2".to_string(),
-                "v2-line2-2".to_string(),
-                "line3".to_string()
-            ],
-            segment.lines
-        );
+        match &result.segments[0] {
+            MergeSegment::Lines { lines } => {
+                assert_eq!(
+                    vec![
+                        "line1".to_string(),
+                        "v2-line2".to_string(),
+                        "v2-line2-2".to_string(),
+                        "line3".to_string()
+                    ],
+                    *lines
+                );
+            }
+            _ => panic!("Expected MergeSegment::Lines"),
+        }
     }
 }

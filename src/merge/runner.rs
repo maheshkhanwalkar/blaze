@@ -1,6 +1,6 @@
 use crate::command::{Command, CommandExecutionError};
 use crate::file::read_lines;
-use crate::merge::{merge, MergeSegmentType};
+use crate::merge::{merge, MergeSegment};
 
 pub struct MergeCommand {
     pub args: Vec<String>,
@@ -44,15 +44,15 @@ impl Command for MergeCommand {
         let result = merge(&original_lines, &v1_lines, &v2_lines);
 
         for segment in result.segments {
-            match segment.segment_type {
-                MergeSegmentType::Lines => {
-                    println!("{}", segment.lines.join("\n"));
+            match segment {
+                MergeSegment::Lines{lines} => {
+                    println!("{}", lines.join("\n"));
                 }
-                MergeSegmentType::Conflict => {
+                MergeSegment::Conflict{v1_changes, v2_changes} => {
                     println!("--- @blaze:mg_conflict:v1 ---");
-                    println!("{}", segment.v1_changes.join("\n"));
+                    println!("{}", v1_changes.join("\n"));
                     println!("--- @blaze:mg_conflict:v2 ---");
-                    println!("{}", segment.v2_changes.join("\n"));
+                    println!("{}", v2_changes.join("\n"));
                     println!("--- @blaze:mg_conflict:end ---");
                 }
             }
