@@ -1,5 +1,4 @@
 mod commit;
-mod partition;
 
 use crate::command::CommandExecutionError;
 use crate::file::find_dir;

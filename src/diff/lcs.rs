@@ -29,6 +29,7 @@ pub struct Subsequence<T> {
 ///
 /// The longest common subsequence shared between the two input lists
 pub fn longest_common_subsequence<T: Eq + Clone>(first: Vec<T>, second: Vec<T>) -> Subsequence<T> {
+    #[allow(non_snake_case)]
     let mut T = Array2D::filled_with(0, first.len(), second.len());
     let mut back: HashMap<(i32, i32), (i32, i32)> = HashMap::new();
 
@@ -111,6 +112,7 @@ pub fn longest_common_subsequence<T: Eq + Clone>(first: Vec<T>, second: Vec<T>) 
 /// # Returns
 ///
 /// The value at the specified position in the array, or 0 if the indices are negative
+#[allow(non_snake_case)]
 fn get(T: &Array2D<i32>, i: i32, j: i32) -> i32 {
     if i < 0 || j < 0 {
         0

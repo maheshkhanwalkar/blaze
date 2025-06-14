@@ -4,28 +4,17 @@ use crate::diff::printer::print_diff;
 use crate::file::read_lines;
 
 pub struct DiffCommand {
-    pub args: Vec<String>,
+    pub first: String,
+    pub second: String,
 }
 
 impl Command for DiffCommand {
     fn execute(&self) -> Result<(), CommandExecutionError> {
-        if self.args.len() != 2 {
-            return Err(CommandExecutionError {
-                message: format!(
-                    "diff: insufficient arguments specified, expected 2, got {len}",
-                    len = self.args.len()
-                ),
-            });
-        }
-
-        let first = &self.args[0];
-        let second = &self.args[1];
-
-        let first_lines = match read_lines(first) {
+        let first_lines = match read_lines(&self.first) {
             Ok(lines) => lines,
             Err(err) => return Err(err),
         };
-        let second_lines = match read_lines(second) {
+        let second_lines = match read_lines(&self.second) {
             Ok(lines) => lines,
             Err(err) => return Err(err),
         };
