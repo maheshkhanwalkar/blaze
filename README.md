@@ -19,3 +19,18 @@ Implements merge functionality
 ```shell
 blaze merge <original-file> <v1-file> <v2-file>
 ```
+
+### kv
+Implement key-value (k-v) store functionality
+
+```shell
+blaze kv put [--global/--partition <partition>] <key> <value>
+```
+
+```shell
+blaze kv get [--global/--partition <partition>] <key>
+```
+
+```shell
+blaze kv hash <key>
+```

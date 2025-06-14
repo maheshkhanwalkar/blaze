@@ -34,10 +34,13 @@ impl Command for MergeCommand {
 
         for segment in result.segments {
             match segment {
-                MergeSegment::Lines{lines} => {
+                MergeSegment::Lines { lines } => {
                     println!("{}", lines.join("\n"));
                 }
-                MergeSegment::Conflict{v1_changes, v2_changes} => {
+                MergeSegment::Conflict {
+                    v1_changes,
+                    v2_changes,
+                } => {
                     println!("--- @blaze:mg_conflict:v1 ---");
                     println!("{}", v1_changes.join("\n"));
                     println!("--- @blaze:mg_conflict:v2 ---");

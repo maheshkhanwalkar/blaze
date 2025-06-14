@@ -1,6 +1,5 @@
 use crate::command::CommandExecutionError;
 use std::env::current_dir;
-use std::fs;
 use std::fs::File;
 use std::io::read_to_string;
 use std::path::PathBuf;
@@ -43,9 +42,4 @@ pub fn find_dir(name: &str, traverse: bool) -> bool {
     }
 
     true
-}
-
-/// Save the contents of a file to disk.
-pub fn save_file(name: &str, content: &String) {
-    fs::write(name, content).expect("unable to save file")
 }
