@@ -30,8 +30,9 @@ enum Action {
         v1: String,
         v2: String,
     },
-    /// Initialise a new blaze repository.
+    /// Initialize a new blaze repository.
     Init,
+    /// Manipulate the internal key-value store.
     Kv {
         #[command(subcommand)]
         kv_sub_command: KvSubCommand,
@@ -81,33 +82,37 @@ fn main() {
         Action::Merge { original, v1, v2 } => Box::new(MergeCommand { original, v1, v2 }),
         Action::Init => Box::new(InitCommand),
         Action::Kv { kv_sub_command } => {
-            let command = match kv_sub_command {
-                KvSubCommand::Get {
-                    global,
-                    partition,
-                    key,
-                } => KVCommand::Get {
-                    partition: partition_name(partition, global),
-                    key,
-                },
-                KvSubCommand::Put {
-                    global,
-                    partition,
-                    key,
-                    value,
-                } => KVCommand::Put {
-                    partition: partition_name(partition, global),
-                    key,
-                    value,
-                },
-                KvSubCommand::Hash { key } => KVCommand::Hash { key },
-            };
+            let command = build_kv_command(kv_sub_command);
             Box::new(command)
         }
     };
     let result = command.execute();
     if let Err(e) = result {
         eprintln!("error. {}", e);
+    }
+}
+
+fn build_kv_command(kv_sub_command: KvSubCommand) -> KVCommand {
+    match kv_sub_command {
+        KvSubCommand::Get {
+            global,
+            partition,
+            key,
+        } => KVCommand::Get {
+            partition: partition_name(partition, global),
+            key,
+        },
+        KvSubCommand::Put {
+            global,
+            partition,
+            key,
+            value,
+        } => KVCommand::Put {
+            partition: partition_name(partition, global),
+            key,
+            value,
+        },
+        KvSubCommand::Hash { key } => KVCommand::Hash { key },
     }
 }
 
