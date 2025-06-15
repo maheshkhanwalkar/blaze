@@ -1,11 +1,22 @@
 use crate::command::CommandExecutionError;
 use crate::file::find_dir;
 use std::fs;
+use std::process::exit;
 
 const BLAZE_REPOSITORY_DIR: &str = ".blaze";
 
 pub fn vfs_already_initialized() -> bool {
-    find_dir(BLAZE_REPOSITORY_DIR, true)
+    find_dir(BLAZE_REPOSITORY_DIR, true).is_some()
+}
+
+pub fn vfs_set_cwd() {
+    let Some(vfs_root) = find_dir(BLAZE_REPOSITORY_DIR, true) else {
+        let cwd = std::env::current_dir().unwrap();
+        eprintln!("not a blaze repository: {}", cwd.display());
+        exit(1);
+    };
+
+    std::env::set_current_dir(vfs_root).unwrap();
 }
 
 pub fn vfs_init() -> Result<(), CommandExecutionError> {

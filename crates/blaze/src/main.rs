@@ -12,6 +12,7 @@ use crate::init::InitCommand;
 use crate::kv::KVCommand;
 use crate::merge::MergeCommand;
 use clap::{Parser, Subcommand};
+use std::process::exit;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -88,6 +89,7 @@ fn main() {
     let result = command.execute();
     if let Err(e) = result {
         eprintln!("error. {}", e);
+        exit(1);
     }
 }
 

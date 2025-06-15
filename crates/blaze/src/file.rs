@@ -22,24 +22,24 @@ pub fn read_lines(path: &String) -> Result<Vec<String>, CommandExecutionError> {
 }
 
 /// Find a directory in the current directory or by traversing up the directory tree.
-pub fn find_dir(name: &str, traverse: bool) -> bool {
+pub fn find_dir(name: &str, traverse: bool) -> Option<String> {
     let mut current_dir = if let Ok(dir) = current_dir() {
         dir
     } else {
-        return false;
+        return None;
     };
 
     while !current_dir.join(name).exists() {
         if !traverse {
-            return false;
+            return None;
         }
 
         current_dir = if let Some(parent) = current_dir.parent() {
             PathBuf::from(parent)
         } else {
-            return false;
+            return None;
         };
     }
 
-    true
+    Some(current_dir.display().to_string())
 }
