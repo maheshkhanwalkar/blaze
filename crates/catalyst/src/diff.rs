@@ -1,8 +1,6 @@
-mod lcs;
-
 use crate::diff::DiffType::Insert;
 use crate::diff::ProcessingState::{InDiff, InEqual};
-use crate::diff::lcs::longest_common_subsequence;
+use crate::lcs::longest_common_subsequence;
 use std::collections::HashMap;
 
 #[derive(Clone, PartialEq, Eq)]
