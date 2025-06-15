@@ -1,320 +1,131 @@
-mod lcs;
-mod printer;
-pub mod runner;
+use crate::command::{Command, CommandExecutionError};
+use crate::file::read_lines;
+use catalyst::diff::SegmentType::{Diff, Equal};
+use catalyst::diff::{diff, DiffLine, DiffSegment, DiffType, FileDiff};
+use std::cmp::{max, min};
+use std::collections::HashSet;
 
-use crate::diff::lcs::longest_common_subsequence;
-use crate::diff::DiffType::Insert;
-use crate::diff::ProcessingState::{InDiff, InEqual};
-use std::collections::HashMap;
-
-#[derive(Clone, PartialEq, Eq)]
-pub enum DiffType {
-    Insert,
-    Delete,
-    Equal,
+pub struct DiffCommand {
+    pub first: String,
+    pub second: String,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub enum SegmentType {
-    Diff,
-    Equal,
-}
-
-#[derive(Clone)]
-pub struct DiffLine {
-    pub diff_type: DiffType,
-    pub line_no: usize,
-    pub line: String,
-}
-
-pub struct DiffSegment {
-    pub(crate) segment_type: SegmentType,
-    pub(crate) lines: Vec<DiffLine>,
-}
-
-pub struct FileDiff {
-    pub(crate) segments: Vec<DiffSegment>,
-}
-
-#[derive(PartialEq, Eq)]
-enum ProcessingState {
-    None,
-    InDiff,
-    InEqual,
-}
-
-/// Compares the contents of two files line by line
-///
-/// # Arguments
-///
-/// * `first_lines` - the lines of the first file to compare
-/// * `second_lines` - the lines of the second file to compare
-///
-/// # Returns
-///
-/// The diff between the files
-pub fn diff(first_lines: &Vec<String>, second_lines: &Vec<String>) -> FileDiff {
-    let mut unique: HashMap<&String, usize> = HashMap::new();
-    let mut counter: usize = 0;
-
-    if first_lines.is_empty() && second_lines.is_empty() {
-        return FileDiff { segments: vec![] };
-    }
-
-    for line in first_lines {
-        if !unique.contains_key(line) {
-            unique.insert(line, counter);
-            counter += 1;
-        }
-    }
-    for line in second_lines {
-        if !unique.contains_key(line) {
-            unique.insert(line, counter);
-            counter += 1;
-        }
-    }
-
-    let first_transformed = first_lines
-        .iter()
-        .map(|it| unique.get(it).unwrap())
-        .collect();
-    let second_transformed = second_lines
-        .iter()
-        .map(|it| unique.get(it).unwrap())
-        .collect();
-
-    let result = longest_common_subsequence(first_transformed, second_transformed);
-
-    let mut i: usize = 0;
-    let mut j: usize = 0;
-
-    // 'first' and 'second' are identical -- so there's no diff
-    if result.lcs.len() == first_lines.len() && result.lcs.len() == second_lines.len() {
-        let lines = first_lines
-            .iter()
-            .enumerate()
-            .map(|(idx, line)| DiffLine {
-                diff_type: DiffType::Equal,
-                line_no: idx + 1,
-                line: line.clone(),
-            })
-            .collect();
-        return FileDiff {
-            segments: vec![DiffSegment {
-                segment_type: SegmentType::Equal,
-                lines,
-            }],
+impl Command for DiffCommand {
+    fn execute(&self) -> Result<(), CommandExecutionError> {
+        let first_lines = match read_lines(&self.first) {
+            Ok(lines) => lines,
+            Err(err) => return Err(err),
         };
+        let second_lines = match read_lines(&self.second) {
+            Ok(lines) => lines,
+            Err(err) => return Err(err),
+        };
+
+        let file_diff = diff(&first_lines, &second_lines);
+        print_diff(file_diff);
+        Ok(())
     }
-
-    let mut segments: Vec<DiffSegment> = Vec::new();
-    let mut lines: Vec<DiffLine> = Vec::new();
-
-    let mut state = ProcessingState::None;
-
-    for k in 0..result.lcs.len() {
-        /*
-         * The 'first' file is considered the original state, while the 'second'
-         * file is the new state.
-         *
-         * We treat any line in the 'first' list that isn't a part of the LCS as a
-         * removal and any line in the 'second' as an addition. We keep processing
-         * elements in 'first' and 'second' in order until we reach an element of
-         * the LCS -- which marks the end of the current DIFF segment and the start
-         * of a new EQUAL segment.
-         */
-        let i_start = i;
-        while i < result.first_pos[k] as usize {
-            if state == ProcessingState::None {
-                state = InDiff;
-            } else if state == InEqual {
-                // Collect the pending items into a segment
-                state = collect(&mut lines, state, &mut segments);
-            }
-
-            lines.push(DiffLine {
-                diff_type: DiffType::Delete,
-                line_no: i + 1,
-                line: first_lines[i].clone(),
-            });
-            i += 1;
-        }
-
-        while j < result.second_pos[k] as usize {
-            if state == ProcessingState::None {
-                state = InDiff;
-            } else if state == InEqual {
-                state = collect(&mut lines, state, &mut segments);
-            }
-
-            /*
-             * we use 'i_start' here because the positions are anchored against the numbering of the
-             * original file, and it would be the position prior to any deletions.
-             */
-            lines.push(DiffLine {
-                diff_type: Insert,
-                line_no: i_start + 1,
-                line: second_lines[j].clone(),
-            });
-            j += 1;
-        }
-
-        if state == ProcessingState::None {
-            state = InEqual;
-        } else if state == InDiff {
-            state = collect(&mut lines, state, &mut segments);
-        }
-
-        let line_no = result.first_pos[k];
-        lines.push(DiffLine {
-            diff_type: DiffType::Equal,
-            line_no: line_no as usize + 1,
-            line: first_lines[line_no as usize].clone(),
-        });
-        i += 1;
-        j += 1;
-    }
-
-    /*
-     * Collect the remaining lines to finish out the segment. Handle the edge case where there
-     * are still lines after the last LCS element and collect those as well.
-     */
-    if state != ProcessingState::None {
-        state = collect(&mut lines, state, &mut segments);
-    } else {
-        // This happens when we have two files that are completely different (empty LCS)
-        state = InDiff;
-    }
-
-    let i_start = i;
-    while i < first_lines.len() {
-        lines.push(DiffLine {
-            diff_type: DiffType::Delete,
-            line_no: i + 1,
-            line: first_lines[i].clone(),
-        });
-        i += 1;
-    }
-
-    while j < second_lines.len() {
-        lines.push(DiffLine {
-            diff_type: Insert,
-            line_no: i_start + 1,
-            line: second_lines[j].clone(),
-        });
-        j += 1;
-    }
-
-    collect(&mut lines, state, &mut segments);
-    FileDiff { segments }
 }
 
-fn collect(
-    lines: &mut Vec<DiffLine>,
-    state: ProcessingState,
-    segments: &mut Vec<DiffSegment>,
-) -> ProcessingState {
-    let segment_type = match state {
-        ProcessingState::None => panic!("Cannot collect from NONE state"),
-        InDiff => SegmentType::Diff,
-        InEqual => SegmentType::Equal,
+// ASCII escape codes for diff color
+const RED_COLOR: &str = "\u{001B}[31m";
+const BLUE_COLOR: &str = "\u{001B}[34m";
+const GREEN_COLOR: &str = "\u{001B}[32m";
+const RESET_COLOR: &str = "\u{001B}[0m";
+
+pub fn print_diff(file_diff: FileDiff) {
+    // No diff
+    if file_diff.segments.len() == 1 && file_diff.segments[0].segment_type == Equal {
+        return;
+    }
+
+    let mut processed: HashSet<usize> = HashSet::new();
+
+    for (i, segment) in file_diff.segments.iter().enumerate() {
+        if segment.segment_type == Diff {
+            let prev_segment = get(&file_diff.segments, i as i64 - 1);
+
+            if prev_segment.is_some() && prev_segment.unwrap().segment_type == Equal {
+                let equal_lines = safe_sub_list(
+                    &prev_segment.unwrap().lines,
+                    prev_segment.unwrap().lines.len(),
+                    -4,
+                );
+                print_equal_lines(&equal_lines, &mut processed);
+            }
+
+            println!(
+                "{BLUE_COLOR}@ line_no:{line_no}{RESET_COLOR}",
+                line_no = segment.lines[0].line_no
+            );
+
+            for line in &segment.lines {
+                match line.diff_type {
+                    DiffType::Insert => println!("{GREEN_COLOR}+ {l}{RESET_COLOR}", l = line.line),
+                    DiffType::Delete => println!("{RED_COLOR}- {l}{RESET_COLOR}", l = line.line),
+                    DiffType::Equal => {}
+                }
+            }
+        } else {
+            let prev_segment = get(&file_diff.segments, i as i64 - 1);
+
+            if prev_segment.is_some() && prev_segment.unwrap().segment_type == Diff {
+                let equal_lines = safe_sub_list(&segment.lines, 0, 4);
+                print_equal_lines(&equal_lines, &mut processed);
+            }
+        }
+    }
+}
+
+fn print_equal_lines(equal_lines: &Vec<DiffLine>, processed: &mut HashSet<usize>) {
+    /*
+     * There's an edge case where the same equal (non-diff) line could be printed multiple times,
+     * so this logic below tracks if we've ever seen a line before and filters it out.
+     *
+     * Edge case:
+     *    + added line
+     *    <same1>
+     *    <same2>
+     *    + another added line
+     *
+     * In the case above, <same1> and <same2> are both a predecessor and a successor of a diff line,
+     * so they would end up being included within the context window twice and hence get printed twice.
+     * Therefore, we have the filtration here to prevent this scenario.
+     */
+    let n_processed: Vec<usize> = equal_lines
+        .iter()
+        .filter(|it| !processed.contains(&it.line_no))
+        .map(|it| {
+            println!("  {line}", line = it.line);
+            it.line_no
+        })
+        .collect();
+
+    for line_no in n_processed {
+        processed.insert(line_no);
+    }
+}
+
+fn safe_sub_list(list: &Vec<DiffLine>, anchor: usize, line_count: i64) -> Vec<DiffLine> {
+    let from_index: i64 = if line_count < 0 {
+        anchor as i64 + line_count
+    } else {
+        anchor as i64
     };
 
-    // Avoid adding an empty segment
-    if !lines.is_empty() {
-        segments.push(DiffSegment {
-            segment_type,
-            lines: lines.clone(),
-        });
-        lines.clear();
-    }
+    let to_index: i64 = if line_count < 0 {
+        anchor as i64
+    } else {
+        anchor as i64 + line_count
+    };
 
-    match state {
-        ProcessingState::None => panic!("Cannot collect from NONE state"),
-        InDiff => InEqual,
-        InEqual => InDiff,
-    }
+    list[max(0, from_index) as usize..min(list.len(), to_index as usize)].to_vec()
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_identical_files() {
-        let first = vec!["line1".to_string(), "line2".to_string()];
-        let second = first.clone();
-        let result = diff(&first, &second);
-        assert_eq!(result.segments.len(), 1);
-        assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
-    }
-
-    #[test]
-    fn test_completely_different_files() {
-        let first = vec!["line1".to_string()];
-        let second = vec!["line2".to_string()];
-        let result = diff(&first, &second);
-        assert_eq!(result.segments.len(), 1);
-        assert_eq!(result.segments[0].segment_type, SegmentType::Diff);
-    }
-
-    #[test]
-    fn test_partial_diff() {
-        let first = vec!["line1".to_string(), "line2".to_string()];
-        let second = vec!["line1".to_string(), "line3".to_string()];
-        let result = diff(&first, &second);
-        assert_eq!(result.segments.len(), 2);
-        assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
-        assert_eq!(result.segments[1].segment_type, SegmentType::Diff);
-    }
-
-    #[test]
-    fn test_alternating_segments() {
-        let first = vec![
-            "a".to_string(),
-            "b".to_string(),
-            "c".to_string(),
-            "d".to_string(),
-        ];
-        let second = vec![
-            "a".to_string(),
-            "x".to_string(),
-            "c".to_string(),
-            "y".to_string(),
-        ];
-        let result = diff(&first, &second);
-        assert_eq!(result.segments.len(), 4);
-        assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
-        assert_eq!(result.segments[1].segment_type, SegmentType::Diff);
-        assert_eq!(result.segments[2].segment_type, SegmentType::Equal);
-        assert_eq!(result.segments[3].segment_type, SegmentType::Diff);
-    }
-
-    #[test]
-    fn test_changes_at_start() {
-        let first = vec!["a".to_string(), "b".to_string(), "c".to_string()];
-        let second = vec!["x".to_string(), "y".to_string(), "c".to_string()];
-        let result = diff(&first, &second);
-        assert_eq!(result.segments.len(), 2);
-        assert_eq!(result.segments[0].segment_type, SegmentType::Diff);
-        assert_eq!(result.segments[1].segment_type, SegmentType::Equal);
-    }
-
-    #[test]
-    fn test_changes_at_end() {
-        let first = vec!["a".to_string(), "b".to_string(), "c".to_string()];
-        let second = vec!["a".to_string(), "x".to_string(), "y".to_string()];
-        let result = diff(&first, &second);
-        assert_eq!(result.segments.len(), 2);
-        assert_eq!(result.segments[0].segment_type, SegmentType::Equal);
-        assert_eq!(result.segments[1].segment_type, SegmentType::Diff);
-    }
-
-    #[test]
-    fn test_empty_files() {
-        let first: Vec<String> = vec![];
-        let second: Vec<String> = vec![];
-        let result = diff(&first, &second);
-        assert_eq!(result.segments.len(), 0);
+fn get(segments: &Vec<DiffSegment>, index: i64) -> Option<&DiffSegment> {
+    if index < 0 {
+        None
+    } else {
+        segments.get(index as usize)
     }
 }

@@ -2,16 +2,15 @@ mod command;
 mod diff;
 mod file;
 mod init;
-mod key;
 mod kv;
 mod merge;
 mod vfs;
 
 use crate::command::Command;
-use crate::diff::runner::DiffCommand;
+use crate::diff::DiffCommand;
 use crate::init::InitCommand;
 use crate::kv::KVCommand;
-use crate::merge::runner::MergeCommand;
+use crate::merge::MergeCommand;
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]

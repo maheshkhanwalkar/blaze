@@ -62,9 +62,8 @@ checksum = "d8b39cb2c1bf5a7c0dd097aa95ab859cf87dab5a4328900f5388942dc1889f74"
 name = "blaze"
 version = "0.1.0"
 dependencies = [
- "array2d",
+ "catalyst",
  "clap",
- "sha2",
 ]
 
 [[package]]
@@ -79,6 +78,10 @@ dependencies = [
 [[package]]
 name = "catalyst"
 version = "0.1.0"
+dependencies = [
+ "array2d",
+ "sha2",
+]
 
 [[package]]
 name = "cfg-if"
