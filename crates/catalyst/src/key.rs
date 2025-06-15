@@ -11,3 +11,9 @@ pub fn construct_key(payload: &str) -> String {
 
     hash_str
 }
+
+/// Verify the payload against the given hash
+pub fn verify_payload(hash: &str, payload: &str) -> bool {
+    let hash_str = construct_key(payload);
+    hash_str == hash
+}

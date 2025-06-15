@@ -368,7 +368,6 @@ fn collect(curr_lines: &mut Vec<String>, segments: &mut Vec<MergeSegment>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Lines;
 
     #[test]
     fn test_merge_with_no_differences() {
