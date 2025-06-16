@@ -2,9 +2,10 @@
 
 ### Project Structure
 
-The `blaze` source is made up of `main.rs` (the main entry point) and packages
-for each subcommand. The subcommand entry point in each package is `runner.rs`,
-while the other files implement the core logic
+The project consists of two main crates:
+
+- **blaze**: Main executable crate, which the end-user interacts with
+- **catalyst**: Core library crate that provides the underlying functionality
 
 ### diff
 Implements file diff functionality
