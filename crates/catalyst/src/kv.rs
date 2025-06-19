@@ -1,3 +1,5 @@
+use crate::key::construct_key;
+use std::fs;
 use std::fs::{read_to_string, write};
 
 /// `KeyValueStore` implements a key-value store which uses the local
@@ -22,23 +24,62 @@ pub enum KeyValueStore<'a> {
 }
 
 const KV_PREFIX: &str = ".blaze/db";
+const KV_PARTITIONS_DIR: &str = ".blaze/db/partitions";
 
 impl KeyValueStore<'_> {
     pub fn get(&self, key: &str) -> Option<String> {
-        let Ok(value) = read_to_string(self.get_kv_path(key)) else {
+        let hash_key = construct_key(key);
+        let Ok(value) = read_to_string(self.get_kv_path(&hash_key)) else {
             return None;
         };
         Some(value)
     }
 
-    pub fn put(&mut self, key: &str, value: &str) {
-        write(self.get_kv_path(key), value).unwrap();
+    pub fn put(&mut self, key: &str, value: &str) -> Result<(), &str> {
+        let hash_key = construct_key(key);
+        write(self.get_kv_path(&hash_key), value).or_else(|_| Err("failed to insert key"))
     }
 
-    fn get_kv_path(&self, key: &str) -> String {
+    pub fn create_partition_path(&mut self, name: &str) -> Result<(), &str> {
+        match &self {
+            KeyValueStore::Partition(_) => {
+                return Err("cannot create a partition on a partitioned key-value store");
+            }
+            _ => {}
+        }
+
+        if self.get(name).is_some() {
+            return Err("partition already exists");
+        }
+
+        let partition_path = format!("{KV_PARTITIONS_DIR}/{}", name);
+        fs::create_dir(partition_path).or_else(|_| Err("failed to create partition path"))
+    }
+
+    pub fn get_partitions(&self) -> Result<Vec<String>, &str> {
+        let mut partitions = vec![];
+        let Ok(dir_iter) = fs::read_dir(KV_PARTITIONS_DIR) else {
+            return Err("failed to read partition directory");
+        };
+
+        for entry in dir_iter {
+            let Ok(entry) = entry else {
+                continue;
+            };
+
+            let path = entry.path();
+            if path.is_dir() {
+                let name = path.file_name().unwrap().to_str().unwrap();
+                partitions.push(name.to_string());
+            }
+        }
+        Ok(partitions)
+    }
+
+    fn get_kv_path(&self, key: &String) -> String {
         match &self {
             KeyValueStore::Global => format!("{KV_PREFIX}/global/{}", key),
-            KeyValueStore::Partition(name) => format!("{KV_PREFIX}/partition/{}/{}", name, key),
+            KeyValueStore::Partition(name) => format!("{KV_PREFIX}/partitions/{}/{}", name, key),
         }
     }
 }

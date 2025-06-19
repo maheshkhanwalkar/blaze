@@ -24,9 +24,8 @@ impl Command for KVCommand {
             KVCommand::Get { partition, key } => {
                 vfs_set_cwd();
                 let kv_store = Self::get_kv_store(partition);
-                let hash_key = construct_key(key);
 
-                let Some(value) = kv_store.get(&hash_key) else {
+                let Some(value) = kv_store.get(key) else {
                     println!("Key '{key}' not found");
                     return Ok(());
                 };
@@ -40,9 +39,11 @@ impl Command for KVCommand {
             } => {
                 vfs_set_cwd();
                 let mut kv_store = Self::get_kv_store(partition);
-                let hash_key = construct_key(key);
-                kv_store.put(&hash_key, value);
-                Ok(())
+                kv_store.put(key, value).or_else(|e| {
+                    Err(CommandExecutionError {
+                        message: format!("Failed to insert {key}: {e}"),
+                    })
+                })
             }
             // Prints out the internal hash key used for a given key. This is useful
             // for introspection to see how blaze stores data internally.

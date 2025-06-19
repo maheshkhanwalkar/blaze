@@ -1,5 +1,6 @@
 mod command;
 mod diff;
+mod fdisk;
 mod file;
 mod init;
 mod kv;
@@ -8,6 +9,7 @@ mod vfs;
 
 use crate::command::Command;
 use crate::diff::DiffCommand;
+use crate::fdisk::FdiskCommand;
 use crate::init::InitCommand;
 use crate::kv::KVCommand;
 use crate::merge::MergeCommand;
@@ -37,6 +39,11 @@ enum Action {
         #[command(subcommand)]
         kv_sub_command: KvSubCommand,
     },
+    /// Manage partitions
+    Fdisk {
+        #[command(subcommand)]
+        fdisk_sub_command: FdiskSubCommand,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -44,24 +51,16 @@ enum KvSubCommand {
     /// Get a value from the key-value store.
     #[command(name = "get")]
     Get {
-        /// Use the global key-value store if set to true
-        #[clap(long, default_value_t = false)]
-        global: bool,
-        /// Use the specified partition if set
-        #[arg(long, conflicts_with = "global")]
-        partition: Option<String>,
+        #[clap(flatten)]
+        group: KvPartitionArgGroup,
         /// Key to get
         key: String,
     },
     /// Insert a value into the key-value store.
     #[command(name = "put")]
     Put {
-        /// Use the global key-value store if set to true
-        #[clap(long, default_value_t = false)]
-        global: bool,
-        /// Use the specified partition if set
-        #[arg(long, conflicts_with = "global")]
-        partition: Option<String>,
+        #[clap(flatten)]
+        group: KvPartitionArgGroup,
         /// Key to insert into the store
         key: String,
         /// Associated value for the specified key
@@ -75,6 +74,27 @@ enum KvSubCommand {
     },
 }
 
+#[derive(Debug, clap::Args)]
+#[group(required = true, multiple = false)]
+struct KvPartitionArgGroup {
+    /// Use the global key-value store if set to true
+    #[clap(long, default_value_t = false)]
+    global: bool,
+    /// Use the specified partition if set
+    #[arg(long, conflicts_with = "global")]
+    partition: Option<String>,
+}
+
+#[derive(Debug, Subcommand)]
+enum FdiskSubCommand {
+    /// List all the local partitions in the repository
+    #[command(name = "ls")]
+    List,
+    /// Create a new partition
+    #[command(name = "create")]
+    Create { name: String, path: String },
+}
+
 fn main() {
     let args = Args::parse();
     let command: Box<dyn Command> = match args.action {
@@ -85,6 +105,10 @@ fn main() {
             let command = build_kv_command(kv_sub_command);
             Box::new(command)
         }
+        Action::Fdisk { fdisk_sub_command } => match fdisk_sub_command {
+            FdiskSubCommand::List => Box::new(FdiskCommand::List),
+            FdiskSubCommand::Create { name, path } => Box::new(FdiskCommand::Create { name, path }),
+        },
     };
     let result = command.execute();
     if let Err(e) = result {
@@ -95,21 +119,12 @@ fn main() {
 
 fn build_kv_command(kv_sub_command: KvSubCommand) -> KVCommand {
     match kv_sub_command {
-        KvSubCommand::Get {
-            global,
-            partition,
-            key,
-        } => KVCommand::Get {
-            partition: partition_name(partition, global),
+        KvSubCommand::Get { group, key } => KVCommand::Get {
+            partition: partition_name(group.partition, group.global),
             key,
         },
-        KvSubCommand::Put {
-            global,
-            partition,
-            key,
-            value,
-        } => KVCommand::Put {
-            partition: partition_name(partition, global),
+        KvSubCommand::Put { group, key, value } => KVCommand::Put {
+            partition: partition_name(group.partition, group.global),
             key,
             value,
         },
