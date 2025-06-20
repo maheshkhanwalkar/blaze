@@ -93,7 +93,12 @@ enum FdiskSubCommand {
     List,
     /// Create a new partition
     #[command(name = "create")]
-    Create { name: String, path: String },
+    Create {
+        /// Name of the partition to create
+        name: String,
+        /// Path to the partition. This must be a relative path from the repository root.
+        path: String,
+    },
 }
 
 fn main() {

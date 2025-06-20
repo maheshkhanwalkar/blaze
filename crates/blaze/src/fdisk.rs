@@ -1,4 +1,5 @@
 use crate::command::{Command, CommandExecutionError};
+use crate::file::find_dir;
 use catalyst::kv::KeyValueStore;
 
 pub enum FdiskCommand {
@@ -25,6 +26,13 @@ impl Command for FdiskCommand {
             }
             FdiskCommand::Create { name, path } => {
                 let mut kv_store = KeyValueStore::Global;
+
+                if find_dir(path, false).is_none() {
+                    return Err(CommandExecutionError {
+                        message: format!("directory {} does not exist", path),
+                    });
+                }
+
                 if let Err(msg) = kv_store.create_partition_path(name) {
                     return Err(CommandExecutionError {
                         message: String::from(msg),
