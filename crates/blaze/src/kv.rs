@@ -1,5 +1,4 @@
 use crate::command::{Command, CommandExecutionError};
-use crate::vfs::vfs_set_cwd;
 use catalyst::key::construct_key;
 use catalyst::kv::KeyValueStore;
 
@@ -22,7 +21,6 @@ impl Command for KVCommand {
     fn execute(&self) -> Result<(), CommandExecutionError> {
         match &self {
             KVCommand::Get { partition, key } => {
-                vfs_set_cwd();
                 let kv_store = Self::get_kv_store(partition);
 
                 let Some(value) = kv_store.get(key) else {
@@ -37,7 +35,6 @@ impl Command for KVCommand {
                 key,
                 value,
             } => {
-                vfs_set_cwd();
                 let mut kv_store = Self::get_kv_store(partition);
                 kv_store.put(key, value).or_else(|e| {
                     Err(CommandExecutionError {

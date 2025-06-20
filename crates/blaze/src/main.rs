@@ -13,6 +13,7 @@ use crate::fdisk::FdiskCommand;
 use crate::init::InitCommand;
 use crate::kv::KVCommand;
 use crate::merge::MergeCommand;
+use crate::vfs::vfs_set_cwd;
 use clap::{Parser, Subcommand};
 use std::process::exit;
 
@@ -97,6 +98,10 @@ enum FdiskSubCommand {
 
 fn main() {
     let args = Args::parse();
+    if should_set_cwd(&args) {
+        vfs_set_cwd();
+    }
+
     let command: Box<dyn Command> = match args.action {
         Action::Diff { first, second } => Box::new(DiffCommand { first, second }),
         Action::Merge { original, v1, v2 } => Box::new(MergeCommand { original, v1, v2 }),
@@ -137,5 +142,16 @@ fn partition_name(partition: Option<String>, global: bool) -> String {
         String::from("global")
     } else {
         partition.unwrap()
+    }
+}
+
+fn should_set_cwd(args: &Args) -> bool {
+    /*
+     * Don't set the cwd if the user is initializing a new repository.
+     * That's because there's no repository root yet, so we don't know where to set the cwd.
+     */
+    match args.action {
+        Action::Init => false,
+        _ => true,
     }
 }
