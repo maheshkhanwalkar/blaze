@@ -1,5 +1,6 @@
 use crate::command::CommandExecutionError;
 use std::env::current_dir;
+use std::fs;
 use std::fs::File;
 use std::io::read_to_string;
 use std::path::PathBuf;
@@ -42,4 +43,15 @@ pub fn find_dir(name: &str, traverse: bool) -> Option<String> {
     }
 
     Some(current_dir.display().to_string())
+}
+
+/// Check if a directory is empty.
+pub fn is_dir_empty(name: &str) -> Result<bool, CommandExecutionError> {
+    let Ok(dir_itr) = fs::read_dir(name) else {
+        return Err(CommandExecutionError {
+            message: format!("could not open {name}"),
+        });
+    };
+
+    Ok(dir_itr.peekable().peek().is_none())
 }

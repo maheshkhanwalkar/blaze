@@ -1,5 +1,5 @@
 use crate::command::{Command, CommandExecutionError};
-use crate::file::find_dir;
+use crate::file::{find_dir, is_dir_empty};
 use catalyst::kv::KeyValueStore;
 
 pub enum FdiskCommand {
@@ -26,12 +26,7 @@ impl Command for FdiskCommand {
             }
             FdiskCommand::Create { name, path } => {
                 let mut kv_store = KeyValueStore::Global;
-
-                if find_dir(path, false).is_none() {
-                    return Err(CommandExecutionError {
-                        message: format!("directory {} does not exist", path),
-                    });
-                }
+                validate_partition_path(path)?;
 
                 if let Err(msg) = kv_store.create_partition_path(name) {
                     return Err(CommandExecutionError {
@@ -46,5 +41,26 @@ impl Command for FdiskCommand {
                 })
             }
         }
+    }
+}
+
+fn validate_partition_path(path: &str) -> Result<(), CommandExecutionError> {
+    if find_dir(path, false).is_none() {
+        return Err(CommandExecutionError {
+            message: format!("directory {} does not exist", path),
+        });
+    }
+
+    /*
+     * This is a temporary limitation to make partition creation easy; however,
+     * long term, we want to support creating partitions in non-empty directories and
+     * handle the history correctly.
+     */
+    if let Ok(true) = is_dir_empty(path) {
+        Ok(())
+    } else {
+        Err(CommandExecutionError {
+            message: format!("directory {} is not empty", path),
+        })
     }
 }
