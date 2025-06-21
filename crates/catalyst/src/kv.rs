@@ -16,6 +16,10 @@ use std::fs::{create_dir, read_dir, read_to_string, write, ReadDir};
 ///   Represents a global key-value store that is not partition-specific. This
 ///   is generally used to store repository-wide data.
 ///
+/// - `Root`:
+///   Represents the root partition of a partitioned key-value store. Not to be
+///   confused with the global key-value store.
+///
 /// - `Partition(&'a String)`:
 ///   Represents a partitioned key-value store with a reference to a `String`
 ///   that specifies the name of the partition. Any data local to a partition
@@ -23,6 +27,7 @@ use std::fs::{create_dir, read_dir, read_to_string, write, ReadDir};
 /// ```
 pub enum KeyValueStore<'a> {
     Global,
+    Root,
     Partition(&'a String),
 }
 
@@ -238,6 +243,7 @@ impl KeyValueStore<'_> {
     fn get_db_root(&self) -> String {
         match &self {
             KeyValueStore::Global => format!("{KV_PREFIX}/global"),
+            KeyValueStore::Root => format!("{KV_PREFIX}/root"),
             KeyValueStore::Partition(name) => {
                 let partition_path = KeyValueStore::Global.get(name).unwrap();
                 format!("{partition_path}/{KV_PREFIX}")
