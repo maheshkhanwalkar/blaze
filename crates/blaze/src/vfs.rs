@@ -23,10 +23,19 @@ pub fn vfs_init() -> Result<()> {
     fs::create_dir(BLAZE_REPOSITORY_DIR)
         .and_then(|()| fs::create_dir(fmt_sub("db")))
         .and_then(|()| fs::create_dir(fmt_sub("db/global")))
-        .and_then(|()| fs::create_dir(fmt_sub("db/partitions")))
         .with_context(|| "failed to create .blaze")
+}
+
+pub fn vfs_create_partition(path: &str) -> Result<()> {
+    fs::create_dir(format!("{}/{}", path, BLAZE_REPOSITORY_DIR))
+        .and_then(|()| fs::create_dir(fmt_partition_sub(path, "db")))
+        .with_context(|| format!("failed to create partition: {}", path))
 }
 
 fn fmt_sub(sub_dir: &str) -> String {
     format!("{}/{}", BLAZE_REPOSITORY_DIR, sub_dir)
+}
+
+fn fmt_partition_sub(dir: &str, sub_dir: &str) -> String {
+    format!("{}/{}/{}", dir, BLAZE_REPOSITORY_DIR, sub_dir)
 }

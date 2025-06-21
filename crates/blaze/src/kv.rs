@@ -37,7 +37,7 @@ impl Command for KVCommand {
                 value,
             } => {
                 let mut kv_store = Self::get_kv_store(partition);
-                kv_store.put(key, value)?;
+                kv_store.put(key, None, value)?;
                 Ok(())
             }
             // Prints out the internal hash key used for a given key. This is useful

@@ -1,5 +1,6 @@
 use crate::command::Command;
 use crate::file::{find_dir, is_dir_empty};
+use crate::vfs::vfs_create_partition;
 use anyhow::Result;
 use catalyst::kv::KeyValueStore;
 
@@ -13,23 +14,40 @@ impl Command for FdiskCommand {
         match &self {
             FdiskCommand::List => {
                 let kv_store = KeyValueStore::Global;
-                let partitions = kv_store.get_partitions()?;
+                let partitions = kv_store.get_keys()?;
 
-                partitions.iter().for_each(|partition| {
-                    let path = kv_store.get(partition).unwrap();
-                    println!("{} => {}", partition, path);
-                });
+                partitions
+                    .filter(|md| {
+                        md.metadata.is_some() && md.metadata.as_ref().unwrap() == "partition"
+                    })
+                    .map(|md| md.key)
+                    .for_each(|partition| {
+                        let path = kv_store.get(partition.as_str()).unwrap();
+                        println!("{} => {}", partition, path);
+                    });
                 Ok(())
             }
             FdiskCommand::Create { name, path } => {
                 let mut kv_store = KeyValueStore::Global;
 
                 validate_partition_path(path)?;
-                kv_store.create_partition_path(name)?;
-                kv_store.put(name, path)?;
+                ensure_partition_is_new(&kv_store, name)?;
+                vfs_create_partition(path)?;
+                kv_store.put(name, Some(String::from("partition")), path)?;
                 Ok(())
             }
         }
+    }
+}
+
+fn ensure_partition_is_new(kv_store: &KeyValueStore, name: &str) -> Result<()> {
+    if let Some(_) = kv_store.get(name) {
+        Err(anyhow::Error::msg(format!(
+            "partition {} already exists",
+            name
+        )))
+    } else {
+        Ok(())
     }
 }
 
