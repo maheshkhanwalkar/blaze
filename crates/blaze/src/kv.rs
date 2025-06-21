@@ -53,10 +53,10 @@ impl Command for KVCommand {
 
 impl KVCommand {
     fn get_kv_store(partition: &String) -> KeyValueStore {
-        if partition == "global" {
-            KeyValueStore::Global
-        } else {
-            KeyValueStore::Partition(partition)
+        match partition.as_str() {
+            "global" => KeyValueStore::Global,
+            "root" => KeyValueStore::Root,
+            _ => KeyValueStore::Partition(partition),
         }
     }
 }
