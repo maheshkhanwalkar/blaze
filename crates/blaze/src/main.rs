@@ -14,6 +14,7 @@ use crate::init::InitCommand;
 use crate::kv::KVCommand;
 use crate::merge::MergeCommand;
 use crate::vfs::vfs_set_cwd;
+use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::process::exit;
 
@@ -104,7 +105,7 @@ enum FdiskSubCommand {
 fn main() {
     let args = Args::parse();
     if should_set_cwd(&args) {
-        vfs_set_cwd();
+        handle_error(&vfs_set_cwd());
     }
 
     let command: Box<dyn Command> = match args.action {
@@ -121,10 +122,7 @@ fn main() {
         },
     };
     let result = command.execute();
-    if let Err(e) = result {
-        eprintln!("error. {}", e);
-        exit(1);
-    }
+    handle_error(&result);
 }
 
 fn build_kv_command(kv_sub_command: KvSubCommand) -> KVCommand {
@@ -139,6 +137,13 @@ fn build_kv_command(kv_sub_command: KvSubCommand) -> KVCommand {
             value,
         },
         KvSubCommand::Hash { key } => KVCommand::Hash { key },
+    }
+}
+
+fn handle_error(result: &Result<()>) {
+    if let Err(e) = result {
+        eprintln!("error. {}", e);
+        exit(1);
     }
 }
 

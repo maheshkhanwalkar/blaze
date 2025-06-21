@@ -9,14 +9,15 @@ pub fn vfs_already_initialized() -> bool {
     find_dir(BLAZE_REPOSITORY_DIR, true).is_some()
 }
 
-pub fn vfs_set_cwd() {
+pub fn vfs_set_cwd() -> Result<()> {
     let Some(vfs_root) = find_dir(BLAZE_REPOSITORY_DIR, true) else {
-        let cwd = std::env::current_dir().unwrap();
+        let cwd = std::env::current_dir()?;
         eprintln!("not a blaze repository: {}", cwd.display());
         exit(1);
     };
 
-    std::env::set_current_dir(vfs_root).unwrap();
+    std::env::set_current_dir(vfs_root)?;
+    Ok(())
 }
 
 pub fn vfs_init() -> Result<()> {
