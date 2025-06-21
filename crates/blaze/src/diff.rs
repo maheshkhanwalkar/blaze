@@ -1,5 +1,6 @@
-use crate::command::{Command, CommandExecutionError};
+use crate::command::Command;
 use crate::file::read_lines;
+use anyhow::Result;
 use catalyst::diff::SegmentType::{Diff, Equal};
 use catalyst::diff::{diff, DiffLine, DiffSegment, DiffType, FileDiff};
 use std::cmp::{max, min};
@@ -11,16 +12,9 @@ pub struct DiffCommand {
 }
 
 impl Command for DiffCommand {
-    fn execute(&self) -> Result<(), CommandExecutionError> {
-        let first_lines = match read_lines(&self.first) {
-            Ok(lines) => lines,
-            Err(err) => return Err(err),
-        };
-        let second_lines = match read_lines(&self.second) {
-            Ok(lines) => lines,
-            Err(err) => return Err(err),
-        };
-
+    fn execute(&self) -> Result<()> {
+        let first_lines = read_lines(&self.first)?;
+        let second_lines = read_lines(&self.second)?;
         let file_diff = diff(&first_lines, &second_lines);
         print_diff(file_diff);
         Ok(())

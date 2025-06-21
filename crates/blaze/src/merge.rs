@@ -1,5 +1,6 @@
-use crate::command::{Command, CommandExecutionError};
+use crate::command::Command;
 use crate::file::read_lines;
+use anyhow::Result;
 use catalyst::merge::{merge, MergeSegment};
 
 pub struct MergeCommand {
@@ -9,7 +10,7 @@ pub struct MergeCommand {
 }
 
 impl Command for MergeCommand {
-    fn execute(&self) -> Result<(), CommandExecutionError> {
+    fn execute(&self) -> Result<()> {
         /*
          * original => the common ancestor of v1 and v2
          * v1 => modification of original
@@ -17,18 +18,9 @@ impl Command for MergeCommand {
          *
          * objective: merge v1, v2 using the original as a guide (aka 3-way merge)
          */
-        let original_lines = match read_lines(&self.original) {
-            Ok(lines) => lines,
-            Err(e) => return Err(e),
-        };
-        let v1_lines = match read_lines(&self.v1) {
-            Ok(lines) => lines,
-            Err(e) => return Err(e),
-        };
-        let v2_lines = match read_lines(&self.v2) {
-            Ok(lines) => lines,
-            Err(e) => return Err(e),
-        };
+        let original_lines = read_lines(&self.original)?;
+        let v1_lines = read_lines(&self.v1)?;
+        let v2_lines = read_lines(&self.v2)?;
 
         let result = merge(&original_lines, &v1_lines, &v2_lines);
 

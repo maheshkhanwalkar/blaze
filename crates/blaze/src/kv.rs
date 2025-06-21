@@ -1,4 +1,5 @@
-use crate::command::{Command, CommandExecutionError};
+use crate::command::Command;
+use anyhow::Result;
 use catalyst::key::construct_key;
 use catalyst::kv::KeyValueStore;
 
@@ -18,7 +19,7 @@ pub enum KVCommand {
 }
 
 impl Command for KVCommand {
-    fn execute(&self) -> Result<(), CommandExecutionError> {
+    fn execute(&self) -> Result<()> {
         match &self {
             KVCommand::Get { partition, key } => {
                 let kv_store = Self::get_kv_store(partition);
@@ -36,11 +37,8 @@ impl Command for KVCommand {
                 value,
             } => {
                 let mut kv_store = Self::get_kv_store(partition);
-                kv_store.put(key, value).or_else(|e| {
-                    Err(CommandExecutionError {
-                        message: format!("Failed to insert {key}: {e}"),
-                    })
-                })
+                kv_store.put(key, value)?;
+                Ok(())
             }
             // Prints out the internal hash key used for a given key. This is useful
             // for introspection to see how blaze stores data internally.

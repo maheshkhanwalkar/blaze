@@ -1,4 +1,6 @@
 use crate::key::construct_key;
+use std::error::Error;
+use std::fmt::{Debug, Display, Formatter};
 use std::fs;
 use std::fs::{read_to_string, write};
 
@@ -23,6 +25,25 @@ pub enum KeyValueStore<'a> {
     Partition(&'a String),
 }
 
+#[derive(Debug)]
+pub struct KeyValueStoreError {
+    msg: &'static str,
+}
+
+impl KeyValueStoreError {
+    pub fn new(msg: &'static str) -> Self {
+        Self { msg }
+    }
+}
+
+impl Display for KeyValueStoreError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
+
+impl Error for KeyValueStoreError {}
+
 const KV_PREFIX: &str = ".blaze/db";
 const KV_PARTITIONS_DIR: &str = ".blaze/db/partitions";
 
@@ -35,31 +56,37 @@ impl KeyValueStore<'_> {
         Some(value)
     }
 
-    pub fn put(&mut self, key: &str, value: &str) -> Result<(), &str> {
+    pub fn put(&mut self, key: &str, value: &str) -> Result<(), KeyValueStoreError> {
         let hash_key = construct_key(key);
-        write(self.get_kv_path(&hash_key), value).or_else(|_| Err("failed to insert key"))
+        write(self.get_kv_path(&hash_key), value)
+            .or_else(|_| Err(KeyValueStoreError::new("failed to insert key")))
     }
 
-    pub fn create_partition_path(&mut self, name: &str) -> Result<(), &str> {
+    pub fn create_partition_path(&mut self, name: &str) -> Result<(), KeyValueStoreError> {
         match &self {
             KeyValueStore::Partition(_) => {
-                return Err("cannot create a partition on a partitioned key-value store");
+                return Err(KeyValueStoreError::new(
+                    "cannot create a partition on a partitioned key-value store",
+                ));
             }
             _ => {}
         }
 
         if self.get(name).is_some() {
-            return Err("partition already exists");
+            return Err(KeyValueStoreError::new("partition already exists"));
         }
 
         let partition_path = format!("{KV_PARTITIONS_DIR}/{}", name);
-        fs::create_dir(partition_path).or_else(|_| Err("failed to create partition path"))
+        fs::create_dir(partition_path)
+            .or_else(|_| Err(KeyValueStoreError::new("failed to create partition path")))
     }
 
-    pub fn get_partitions(&self) -> Result<Vec<String>, &str> {
+    pub fn get_partitions(&self) -> Result<Vec<String>, KeyValueStoreError> {
         let mut partitions = vec![];
         let Ok(dir_iter) = fs::read_dir(KV_PARTITIONS_DIR) else {
-            return Err("failed to read partition directory");
+            return Err(KeyValueStoreError::new(
+                "failed to read partition directory",
+            ));
         };
 
         for entry in dir_iter {

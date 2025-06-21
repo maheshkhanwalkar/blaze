@@ -1,24 +1,13 @@
-use crate::command::CommandExecutionError;
+use anyhow::{Context, Result};
 use std::env::current_dir;
 use std::fs;
 use std::fs::File;
 use std::io::read_to_string;
 use std::path::PathBuf;
 
-pub fn read_lines(path: &String) -> Result<Vec<String>, CommandExecutionError> {
-    let file = File::open(path);
-
-    if file.is_err() {
-        return Err(CommandExecutionError {
-            message: format!("file not found {path}"),
-        });
-    }
-
-    let lines: Vec<String> = read_to_string(file.unwrap())
-        .unwrap()
-        .lines()
-        .map(String::from)
-        .collect();
+pub fn read_lines(path: &String) -> Result<Vec<String>> {
+    let file = File::open(path).with_context(|| format!("file not found {path}"))?;
+    let lines: Vec<String> = read_to_string(file)?.lines().map(String::from).collect();
     Ok(lines)
 }
 
@@ -46,12 +35,7 @@ pub fn find_dir(name: &str, traverse: bool) -> Option<String> {
 }
 
 /// Check if a directory is empty.
-pub fn is_dir_empty(name: &str) -> Result<bool, CommandExecutionError> {
-    let Ok(dir_itr) = fs::read_dir(name) else {
-        return Err(CommandExecutionError {
-            message: format!("could not open {name}"),
-        });
-    };
-
+pub fn is_dir_empty(name: &str) -> Result<bool> {
+    let dir_itr = fs::read_dir(name).with_context(|| format!("could not open {name}"))?;
     Ok(dir_itr.peekable().peek().is_none())
 }

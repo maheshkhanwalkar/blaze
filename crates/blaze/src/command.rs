@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::fmt;
 use std::fmt::Formatter;
 
@@ -15,5 +16,5 @@ impl fmt::Display for CommandExecutionError {
 
 /// Trait that represents a generic command that can be executed.
 pub trait Command {
-    fn execute(&self) -> Result<(), CommandExecutionError>;
+    fn execute(&self) -> Result<()>;
 }
