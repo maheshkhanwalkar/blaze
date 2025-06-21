@@ -8,6 +8,7 @@ The project consists of two main crates:
 - **catalyst**: Core library crate that provides the underlying functionality
 
 ### diff
+
 Implements file diff functionality
 
 ```shell
@@ -15,6 +16,7 @@ blaze diff <file-1> <file-2>
 ```
 
 ### merge
+
 Implements merge functionality
 
 ```shell
@@ -22,6 +24,7 @@ blaze merge <original-file> <v1-file> <v2-file>
 ```
 
 ### kv
+
 Implement key-value (k-v) store functionality
 
 ```shell
@@ -34,4 +37,16 @@ blaze kv get [--global/--partition <partition>] <key>
 
 ```shell
 blaze kv hash <key>
+```
+
+### fdisk
+
+Partition management
+
+```shell
+blaze fdisk create <partition-name> <rel-path-to-partition>
+```
+
+```shell
+blaze fdisk ls
 ```
