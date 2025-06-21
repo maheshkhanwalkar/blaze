@@ -1,5 +1,5 @@
 use crate::file::{contains_dir, find_dir, get_parent_dir};
-use crate::vfs::Partition::Root;
+use crate::vfs::RootType::Repository;
 use anyhow::{Context, Result};
 use std::cmp::PartialEq;
 use std::env::current_dir;
@@ -9,16 +9,30 @@ use std::process::exit;
 const BLAZE_REPOSITORY_DIR: &str = ".blaze";
 
 #[derive(Debug, PartialEq)]
-pub enum Partition {
-    Root,
-    Local,
+pub enum RootType {
+    Repository,
+    Partition,
 }
 
+/// Returns true if the VFS has already been initialized.
 pub fn vfs_already_initialized() -> bool {
-    find_dir(&*current_dir().unwrap(), BLAZE_REPOSITORY_DIR, true).is_some()
+    find_dir(current_dir().unwrap().as_path(), BLAZE_REPOSITORY_DIR, true).is_some()
 }
 
-pub fn vfs_set_cwd(partition: Partition) -> Result<()> {
+/// Sets the current working directory to the appropriate root directory based on the
+/// provided `RootType`.
+///
+/// # Arguments
+///
+/// * `root_type` - An enum of type `RootType` that indicates whether to locate the root
+///   repository directory or the nearest (by walking up the directory tree) partition.
+///
+/// # Returns
+///
+/// Returns a `Result` wrapped in `()` to indicate success. If the repository root cannot
+/// be found, or any underlying OS-related operations (e.g., `set_current_dir`) fail,
+/// the function will return an error.
+pub fn vfs_set_cwd(root_type: RootType) -> Result<()> {
     let cwd = current_dir()?;
 
     let Some(vfs_root) = find_dir(cwd.as_path(), BLAZE_REPOSITORY_DIR, true) else {
@@ -29,10 +43,15 @@ pub fn vfs_set_cwd(partition: Partition) -> Result<()> {
     std::env::set_current_dir(vfs_root.as_path())?;
     let root_dir = format!("{BLAZE_REPOSITORY_DIR}/db/root");
 
-    if partition != Root || contains_dir(vfs_root.as_path(), root_dir.as_str()) {
+    if root_type != Repository || contains_dir(vfs_root.as_path(), root_dir.as_str()) {
         return Ok(());
     }
 
+    /*
+     * We are currently in a child partition, so we need to go up to the root partition.
+     * It's possible for child partitions to be nested, so we need to loop until we find the root
+     * or hit an error.
+     */
     loop {
         let parent = get_parent_dir()?;
         let blaze_dir =
@@ -47,6 +66,7 @@ pub fn vfs_set_cwd(partition: Partition) -> Result<()> {
     }
 }
 
+/// Initializes the VFS, creating the necessary metadata structure.
 pub fn vfs_init() -> Result<()> {
     fs::create_dir(BLAZE_REPOSITORY_DIR)
         .and_then(|()| fs::create_dir(fmt_sub("db")))
@@ -55,6 +75,7 @@ pub fn vfs_init() -> Result<()> {
         .with_context(|| "failed to create .blaze")
 }
 
+/// Creates a new partition in the VFS.
 pub fn vfs_create_partition(path: &str) -> Result<()> {
     fs::create_dir(format!("{}/{}", path, BLAZE_REPOSITORY_DIR))
         .and_then(|()| fs::create_dir(fmt_partition_sub(path, "db")))
