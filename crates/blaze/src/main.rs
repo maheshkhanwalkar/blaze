@@ -13,7 +13,7 @@ use crate::fdisk::FdiskCommand;
 use crate::init::InitCommand;
 use crate::kv::KVCommand;
 use crate::merge::MergeCommand;
-use crate::vfs::vfs_set_cwd;
+use crate::vfs::{vfs_set_cwd, Partition};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::process::exit;
@@ -105,7 +105,7 @@ enum FdiskSubCommand {
 fn main() {
     let args = Args::parse();
     if should_set_cwd(&args) {
-        handle_error(&vfs_set_cwd());
+        handle_error(&vfs_set_cwd(Partition::Root));
     }
 
     let command: Box<dyn Command> = match args.action {

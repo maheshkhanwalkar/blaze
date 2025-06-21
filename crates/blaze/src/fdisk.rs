@@ -3,6 +3,7 @@ use crate::file::{find_dir, is_dir_empty};
 use crate::vfs::vfs_create_partition;
 use anyhow::Result;
 use catalyst::kv::KeyValueStore;
+use std::env::current_dir;
 
 pub enum FdiskCommand {
     List,
@@ -52,7 +53,7 @@ fn ensure_partition_is_new(kv_store: &KeyValueStore, name: &str) -> Result<()> {
 }
 
 fn validate_partition_path(path: &str) -> Result<()> {
-    if find_dir(path, false).is_none() {
+    if find_dir(current_dir()?.as_path(), path, false).is_none() {
         return Err(anyhow::Error::msg(format!(
             "directory {} does not exist",
             path
