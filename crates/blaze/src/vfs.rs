@@ -1,5 +1,5 @@
 use crate::file::{contains_dir, find_dir, get_parent_dir};
-use crate::vfs::RootType::Repository;
+use crate::vfs::RootType::Partition;
 use anyhow::{Context, Result};
 use std::cmp::PartialEq;
 use std::env::current_dir;
@@ -12,6 +12,7 @@ const BLAZE_REPOSITORY_DIR: &str = ".blaze";
 pub enum RootType {
     Repository,
     Partition,
+    None,
 }
 
 /// Returns true if the VFS has already been initialized.
@@ -33,6 +34,10 @@ pub fn vfs_already_initialized() -> bool {
 /// be found, or any underlying OS-related operations (e.g., `set_current_dir`) fail,
 /// the function will return an error.
 pub fn vfs_set_cwd(root_type: RootType) -> Result<()> {
+    if root_type == RootType::None {
+        return Ok(());
+    }
+
     let cwd = current_dir()?;
 
     let Some(vfs_root) = find_dir(cwd.as_path(), BLAZE_REPOSITORY_DIR, true) else {
@@ -43,7 +48,7 @@ pub fn vfs_set_cwd(root_type: RootType) -> Result<()> {
     std::env::set_current_dir(vfs_root.as_path())?;
     let root_dir = format!("{BLAZE_REPOSITORY_DIR}/db/root");
 
-    if root_type != Repository || contains_dir(vfs_root.as_path(), root_dir.as_str()) {
+    if root_type == Partition || contains_dir(vfs_root.as_path(), root_dir.as_str()) {
         return Ok(());
     }
 

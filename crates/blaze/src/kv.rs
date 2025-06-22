@@ -1,4 +1,5 @@
 use crate::command::Command;
+use crate::vfs::{vfs_set_cwd, RootType};
 use anyhow::Result;
 use catalyst::key::construct_key;
 use catalyst::kv::KeyValueStore;
@@ -47,6 +48,13 @@ impl Command for KVCommand {
                 println!("{}", hash_key);
                 Ok(())
             }
+        }
+    }
+
+    fn set_vfs_root(&self) -> Result<()> {
+        match self {
+            KVCommand::Get { .. } | KVCommand::Put { .. } => vfs_set_cwd(RootType::Repository),
+            KVCommand::Hash { .. } => vfs_set_cwd(RootType::None),
         }
     }
 }

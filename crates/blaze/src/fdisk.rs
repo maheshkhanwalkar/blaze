@@ -1,6 +1,6 @@
 use crate::command::Command;
 use crate::file::{find_dir, is_dir_empty};
-use crate::vfs::vfs_create_partition;
+use crate::vfs::{vfs_create_partition, vfs_set_cwd, RootType};
 use anyhow::Result;
 use catalyst::kv::KeyValueStore;
 use std::env::current_dir;
@@ -38,6 +38,10 @@ impl Command for FdiskCommand {
                 Ok(())
             }
         }
+    }
+
+    fn set_vfs_root(&self) -> Result<()> {
+        vfs_set_cwd(RootType::Repository)
     }
 }
 

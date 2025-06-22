@@ -1,5 +1,6 @@
 use crate::command::Command;
 use crate::file::read_lines;
+use crate::vfs::{vfs_set_cwd, RootType};
 use anyhow::Result;
 use catalyst::merge::{merge, MergeSegment};
 
@@ -43,5 +44,9 @@ impl Command for MergeCommand {
         }
 
         Ok(())
+    }
+
+    fn set_vfs_root(&self) -> Result<()> {
+        vfs_set_cwd(RootType::None)
     }
 }

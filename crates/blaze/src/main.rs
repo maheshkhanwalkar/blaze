@@ -13,7 +13,6 @@ use crate::fdisk::FdiskCommand;
 use crate::init::InitCommand;
 use crate::kv::KVCommand;
 use crate::merge::MergeCommand;
-use crate::vfs::{vfs_set_cwd, RootType};
 use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::process::exit;
@@ -104,10 +103,6 @@ enum FdiskSubCommand {
 
 fn main() {
     let args = Args::parse();
-    if should_set_cwd(&args) {
-        handle_error(&vfs_set_cwd(RootType::Repository));
-    }
-
     let command: Box<dyn Command> = match args.action {
         Action::Diff { first, second } => Box::new(DiffCommand { first, second }),
         Action::Merge { original, v1, v2 } => Box::new(MergeCommand { original, v1, v2 }),
@@ -121,7 +116,8 @@ fn main() {
             FdiskSubCommand::Create { name, path } => Box::new(FdiskCommand::Create { name, path }),
         },
     };
-    let result = command.execute();
+
+    let result = execute(command);
     handle_error(&result);
 }
 
@@ -140,6 +136,11 @@ fn build_kv_command(kv_sub_command: KvSubCommand) -> KVCommand {
     }
 }
 
+fn execute(command: Box<dyn Command>) -> Result<()> {
+    command.set_vfs_root()?;
+    command.execute()
+}
+
 fn handle_error(result: &Result<()>) {
     if let Err(e) = result {
         eprintln!("error. {}", e);
@@ -152,16 +153,5 @@ fn partition_name(partition: Option<String>, global: bool) -> String {
         String::from("global")
     } else {
         partition.unwrap()
-    }
-}
-
-fn should_set_cwd(args: &Args) -> bool {
-    /*
-     * Don't set the cwd if the user is initializing a new repository.
-     * That's because there's no repository root yet, so we don't know where to set the cwd.
-     */
-    match args.action {
-        Action::Init => false,
-        _ => true,
     }
 }
