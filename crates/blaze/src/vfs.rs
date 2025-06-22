@@ -16,8 +16,9 @@ pub enum RootType {
 }
 
 /// Returns true if the VFS has already been initialized.
-pub fn vfs_already_initialized() -> bool {
-    find_dir(current_dir().unwrap().as_path(), BLAZE_REPOSITORY_DIR, true).is_some()
+pub fn vfs_already_initialized() -> Result<bool> {
+    let vfs_dir = find_dir(current_dir()?.as_path(), BLAZE_REPOSITORY_DIR, true);
+    Ok(vfs_dir.is_some())
 }
 
 /// Sets the current working directory to the appropriate root directory based on the
